@@ -238,10 +238,11 @@
 		788A1CB52ADC5DD800CE6CB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 3928855QT9;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
 			name = Debug;
 		};
@@ -265,7 +266,7 @@
 				788A1CB32ADC5DD800CE6CB9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		788A1CB42ADC5DD800CE6CB9 /* Build configuration list for PBXNativeTarget "vesc-emulator" */ = {
 			isa = XCConfigurationList;
@@ -274,7 +275,7 @@
 				788A1CB62ADC5DD800CE6CB9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
