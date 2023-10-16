@@ -31,7 +31,7 @@
 //#include "mcpwm_foc.h"
 //#include "mc_interface.h"
 //#include "applications/app.h"
-#include "timeout.h"
+//#include "timeout.h"
 //#include "servo_dec.h"
 //#include "comm_can.h"
 //#include "flash_helper.h"
@@ -56,6 +56,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+#define VESC_EMULATOR_NO_SUPPORT   printf("Unsupported command type\n %0x", packet_id);
 
 // Threads
 //static THD_FUNCTION(blocking_thread, arg);
@@ -172,1407 +174,1416 @@ void commands_send_packet_last_blocking(unsigned char *data, unsigned int len) {
  * The length of the buffer.
  */
 void commands_process_packet(unsigned char *data, unsigned int len,
-		void(*reply_func)(unsigned char *data, unsigned int len)) {
-
-	if (!len) {
-		return;
-	}
-
-	COMM_PACKET_ID packet_id;
-
-	packet_id = data[0];
-	data++;
-	len--;
-
-	// The NRF51 ESB implementation is treated like it has its own
-	// independent communication interface.
-	if (packet_id == COMM_EXT_NRF_PRESENT ||
-			packet_id == COMM_EXT_NRF_ESB_RX_DATA) {
-		send_func_nrf = reply_func;
-	} else {
-		send_func = reply_func;
-	}
-
-	// Avoid calling invalid function pointer if it is null.
-	// commands_send_packet will make the check.
-	if (!reply_func) {
-		reply_func = commands_send_packet;
-	}
-
-	if (!send_func_can_fwd) {
-		send_func_can_fwd = reply_func;
-	}
-
-	switch (packet_id) {
-	case COMM_FW_VERSION: {
-		int32_t ind = 0;
-		uint8_t send_buffer[60];
-		send_buffer[ind++] = COMM_FW_VERSION;
-		send_buffer[ind++] = FW_VERSION_MAJOR;
-		send_buffer[ind++] = FW_VERSION_MINOR;
-
-		strcpy((char*)(send_buffer + ind), HW_NAME);
-		ind += strlen(HW_NAME) + 1;
-
-		memcpy(send_buffer + ind, STM32_UUID_8, 12);
-		ind += 12;
-
-		// Add 1 to the UUID for the second motor, so that configuration backup and
-		// restore works.
-		if (mc_interface_get_motor_thread() == 2) {
-			send_buffer[ind - 1]++;
-		}
-
-		send_buffer[ind++] = app_get_configuration()->pairing_done;
-		send_buffer[ind++] = FW_TEST_VERSION_NUMBER;
-
-		send_buffer[ind++] = HW_TYPE_VESC;
-
-		send_buffer[ind++] = 0; // No custom config
-
+                             void(*reply_func)(unsigned char *data, unsigned int len)) {
+    
+    if (!len) {
+        return;
+    }
+    
+    COMM_PACKET_ID packet_id;
+    
+    packet_id = data[0];
+    data++;
+    len--;
+    
+    // The NRF51 ESB implementation is treated like it has its own
+    // independent communication interface.
+    if (packet_id == COMM_EXT_NRF_PRESENT ||
+        packet_id == COMM_EXT_NRF_ESB_RX_DATA) {
+        send_func_nrf = reply_func;
+    } else {
+        send_func = reply_func;
+    }
+    
+    // Avoid calling invalid function pointer if it is null.
+    // commands_send_packet will make the check.
+    if (!reply_func) {
+        reply_func = commands_send_packet;
+    }
+    
+    if (!send_func_can_fwd) {
+        send_func_can_fwd = reply_func;
+    }
+    
+    switch (packet_id) {
+        case COMM_FW_VERSION: {
+            int32_t ind = 0;
+            uint8_t send_buffer[60];
+            send_buffer[ind++] = COMM_FW_VERSION;
+            send_buffer[ind++] = FW_VERSION_MAJOR;
+            send_buffer[ind++] = FW_VERSION_MINOR;
+            
+            strcpy((char*)(send_buffer + ind), HW_NAME);
+            ind += strlen(HW_NAME) + 1;
+            
+            memcpy(send_buffer + ind, STM32_UUID_8, 12);
+            ind += 12;
+            
+            // Add 1 to the UUID for the second motor, so that configuration backup and
+            // restore works.
+            //		if (mc_interface_get_motor_thread() == 2) {
+            //			send_buffer[ind - 1]++;
+            //		}
+            
+            send_buffer[ind++] = app_get_configuration()->pairing_done;
+            send_buffer[ind++] = FW_TEST_VERSION_NUMBER;
+            
+            send_buffer[ind++] = HW_TYPE_VESC;
+            
+            send_buffer[ind++] = 0; // No custom config
+            
 #ifdef HW_HAS_PHASE_FILTERS
-		send_buffer[ind++] = 1;
+            send_buffer[ind++] = 1;
 #else
-		send_buffer[ind++] = 0;
+            send_buffer[ind++] = 0;
 #endif
-
+            
 #ifdef QMLUI_SOURCE_HW
 #ifdef QMLUI_HW_FULLSCREEN
-		send_buffer[ind++] = 2;
+            send_buffer[ind++] = 2;
 #else
-		send_buffer[ind++] = 1;
+            send_buffer[ind++] = 1;
 #endif
 #else
-		send_buffer[ind++] = 0;
+            send_buffer[ind++] = 0;
 #endif
-
+            
 #ifdef QMLUI_SOURCE_APP
 #ifdef QMLUI_APP_FULLSCREEN
-		send_buffer[ind++] = 2;
+            send_buffer[ind++] = 2;
 #else
-		send_buffer[ind++] = 1;
+            send_buffer[ind++] = 1;
 #endif
 #else
-		if (flash_helper_qmlui_data()) {
-			send_buffer[ind++] = flash_helper_qmlui_flags();
-		} else {
-			send_buffer[ind++] = 0;
-		}
+            if (flash_helper_qmlui_data()) {
+                send_buffer[ind++] = flash_helper_qmlui_flags();
+            } else {
+                send_buffer[ind++] = 0;
+            }
 #endif
-
-		fw_version_sent_cnt++;
-
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_JUMP_TO_BOOTLOADER_ALL_CAN:
-		data[-1] = COMM_JUMP_TO_BOOTLOADER;
-		comm_can_send_buffer(255, data - 1, len + 1, 2);
-		chThdSleepMilliseconds(100);
-		/* Falls through. */
-		/* no break */
-	case COMM_JUMP_TO_BOOTLOADER:
-		flash_helper_jump_to_bootloader();
-		break;
-
-	case COMM_ERASE_NEW_APP_ALL_CAN:
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(6000);
-		}
-
-		data[-1] = COMM_ERASE_NEW_APP;
-		comm_can_send_buffer(255, data - 1, len + 1, 2);
-		chThdSleepMilliseconds(1500);
-		/* Falls through. */
-		/* no break */
-	case COMM_ERASE_NEW_APP: {
-		int32_t ind = 0;
-
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(6000);
-		}
-		uint16_t flash_res = flash_helper_erase_new_app(buffer_get_uint32(data, &ind));
-
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_ERASE_NEW_APP;
-		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_WRITE_NEW_APP_DATA_ALL_CAN_LZO:
-	case COMM_WRITE_NEW_APP_DATA_ALL_CAN:
-		if (packet_id == COMM_WRITE_NEW_APP_DATA_ALL_CAN_LZO) {
-			chMtxLock(&send_buffer_mutex);
-			memcpy(send_buffer_global, data + 6, len - 6);
-			int32_t ind = 4;
-			lzo_uint decompressed_len = buffer_get_uint16(data, &ind);
-			lzo1x_decompress_safe(send_buffer_global, len - 6, data + 4, &decompressed_len, NULL);
-			chMtxUnlock(&send_buffer_mutex);
-			len = decompressed_len + 4;
-		}
-
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(2000);
-		}
-
-		data[-1] = COMM_WRITE_NEW_APP_DATA;
-
-		comm_can_send_buffer(255, data - 1, len + 1, 2);
-		/* Falls through. */
-		/* no break */
-	case COMM_WRITE_NEW_APP_DATA_LZO:
-	case COMM_WRITE_NEW_APP_DATA: {
-		if (packet_id == COMM_WRITE_NEW_APP_DATA_LZO) {
-			chMtxLock(&send_buffer_mutex);
-			memcpy(send_buffer_global, data + 6, len - 6);
-			int32_t ind = 4;
-			lzo_uint decompressed_len = buffer_get_uint16(data, &ind);
-			lzo1x_decompress_safe(send_buffer_global, len - 6, data + 4, &decompressed_len, NULL);
-			chMtxUnlock(&send_buffer_mutex);
-			len = decompressed_len + 4;
-		}
-
-		int32_t ind = 0;
-		uint32_t new_app_offset = buffer_get_uint32(data, &ind);
-
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(2000);
-		}
-		uint16_t flash_res = flash_helper_write_new_app_data(new_app_offset, data + ind, len - ind);
-
-		SHUTDOWN_RESET();
-
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_WRITE_NEW_APP_DATA;
-		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
-		buffer_append_uint32(send_buffer, new_app_offset, &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_GET_VALUES:
-	case COMM_GET_VALUES_SELECTIVE: {
-		int32_t ind = 0;
-		chMtxLock(&send_buffer_mutex);
-		uint8_t *send_buffer = send_buffer_global;
-		send_buffer[ind++] = packet_id;
-
-		uint32_t mask = 0xFFFFFFFF;
-		if (packet_id == COMM_GET_VALUES_SELECTIVE) {
-			int32_t ind2 = 0;
-			mask = buffer_get_uint32(data, &ind2);
-			buffer_append_uint32(send_buffer, mask, &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 0)) {
-			buffer_append_float16(send_buffer, mc_interface_temp_fet_filtered(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 1)) {
-			buffer_append_float16(send_buffer, mc_interface_temp_motor_filtered(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 2)) {
-			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_motor_current(), 1e2, &ind);
-		}
-		if (mask & ((uint32_t)1 << 3)) {
-			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_input_current(), 1e2, &ind);
-		}
-		if (mask & ((uint32_t)1 << 4)) {
-			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_id(), 1e2, &ind);
-		}
-		if (mask & ((uint32_t)1 << 5)) {
-			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_iq(), 1e2, &ind);
-		}
-		if (mask & ((uint32_t)1 << 6)) {
-			buffer_append_float16(send_buffer, mc_interface_get_duty_cycle_now(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 7)) {
-			buffer_append_float32(send_buffer, mc_interface_get_rpm(), 1e0, &ind);
-		}
-		if (mask & ((uint32_t)1 << 8)) {
-			buffer_append_float16(send_buffer, mc_interface_get_input_voltage_filtered(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 9)) {
-			buffer_append_float32(send_buffer, mc_interface_get_amp_hours(false), 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 10)) {
-			buffer_append_float32(send_buffer, mc_interface_get_amp_hours_charged(false), 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 11)) {
-			buffer_append_float32(send_buffer, mc_interface_get_watt_hours(false), 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 12)) {
-			buffer_append_float32(send_buffer, mc_interface_get_watt_hours_charged(false), 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 13)) {
-			buffer_append_int32(send_buffer, mc_interface_get_tachometer_value(false), &ind);
-		}
-		if (mask & ((uint32_t)1 << 14)) {
-			buffer_append_int32(send_buffer, mc_interface_get_tachometer_abs_value(false), &ind);
-		}
-		if (mask & ((uint32_t)1 << 15)) {
-			send_buffer[ind++] = mc_interface_get_fault();
-		}
-		if (mask & ((uint32_t)1 << 16)) {
-			buffer_append_float32(send_buffer, mc_interface_get_pid_pos_now(), 1e6, &ind);
-		}
-		if (mask & ((uint32_t)1 << 17)) {
-			uint8_t current_controller_id = app_get_configuration()->controller_id;
-#ifdef HW_HAS_DUAL_MOTORS
-			if (mc_interface_get_motor_thread() == 2) {
-				current_controller_id = utils_second_motor_id();
-			}
-#endif
-			send_buffer[ind++] = current_controller_id;
-		}
-		if (mask & ((uint32_t)1 << 18)) {
-			buffer_append_float16(send_buffer, NTC_TEMP_MOS1(), 1e1, &ind);
-			buffer_append_float16(send_buffer, NTC_TEMP_MOS2(), 1e1, &ind);
-			buffer_append_float16(send_buffer, NTC_TEMP_MOS3(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 19)) {
-			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vd(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 20)) {
-			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vq(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 21)) {
-			uint8_t status = 0;
-			status |= timeout_has_timeout();
-			status |= timeout_kill_sw_active() << 1;
-			send_buffer[ind++] = status;
-		}
-
-		reply_func(send_buffer, ind);
-		chMtxUnlock(&send_buffer_mutex);
-	} break;
-
-	case COMM_SET_DUTY: {
-		int32_t ind = 0;
-		mc_interface_set_duty((float)buffer_get_int32(data, &ind) / 100000.0);
-		timeout_reset();
-	} break;
-
-	case COMM_SET_CURRENT: {
-		int32_t ind = 0;
-		mc_interface_set_current((float)buffer_get_int32(data, &ind) / 1000.0);
-		timeout_reset();
-	} break;
-
-	case COMM_SET_CURRENT_BRAKE: {
-		int32_t ind = 0;
-		mc_interface_set_brake_current((float)buffer_get_int32(data, &ind) / 1000.0);
-		timeout_reset();
-	} break;
-
-	case COMM_SET_RPM: {
-		int32_t ind = 0;
-		mc_interface_set_pid_speed((float)buffer_get_int32(data, &ind));
-		timeout_reset();
-	} break;
-
-	case COMM_SET_POS: {
-		int32_t ind = 0;
-		mc_interface_set_pid_pos((float)buffer_get_int32(data, &ind) / 1000000.0);
-		timeout_reset();
-	} break;
-
-	case COMM_SET_HANDBRAKE: {
-		int32_t ind = 0;
-		mc_interface_set_handbrake(buffer_get_float32(data, 1e3, &ind));
-		timeout_reset();
-	} break;
-
-	case COMM_SET_DETECT: {
-		int32_t ind = 0;
-		display_position_mode = data[ind++];
-
-		if (mc_interface_get_configuration()->motor_type == MOTOR_TYPE_BLDC) {
-			if (display_position_mode == DISP_POS_MODE_NONE) {
-				mc_interface_release_motor();
-			} else if (display_position_mode == DISP_POS_MODE_INDUCTANCE) {
-				mcpwm_set_detect();
-			}
-		}
-
-		timeout_reset();
-	} break;
-
-	case COMM_SET_SERVO_POS: {
-		int32_t ind = 0;
-		servo_simple_set_output(buffer_get_float16(data, 1000.0, &ind));
-	} break;
-
-	case COMM_SET_MCCONF: {
-#ifndef	HW_MCCONF_READ_ONLY
-		mc_configuration *mcconf = mempools_alloc_mcconf();
-		*mcconf = *mc_interface_get_configuration();
-
-		if (confgenerator_deserialize_mcconf(data, mcconf)) {
-			utils_truncate_number(&mcconf->l_current_max_scale , 0.0, 1.0);
-			utils_truncate_number(&mcconf->l_current_min_scale , 0.0, 1.0);
-
-#ifdef HW_HAS_DUAL_MOTORS
-			mcconf->motor_type = MOTOR_TYPE_FOC;
-#endif
-
-			mcconf->lo_current_max = mcconf->l_current_max * mcconf->l_current_max_scale;
-			mcconf->lo_current_min = mcconf->l_current_min * mcconf->l_current_min_scale;
-			mcconf->lo_in_current_max = mcconf->l_in_current_max;
-			mcconf->lo_in_current_min = mcconf->l_in_current_min;
-			mcconf->lo_current_motor_max_now = mcconf->lo_current_max;
-			mcconf->lo_current_motor_min_now = mcconf->lo_current_min;
-
-			commands_apply_mcconf_hw_limits(mcconf);
-			conf_general_store_mc_configuration(mcconf, mc_interface_get_motor_thread() == 2);
-			mc_interface_set_configuration(mcconf);
-			chThdSleepMilliseconds(200);
-
-			int32_t ind = 0;
-			uint8_t send_buffer[50];
-			send_buffer[ind++] = packet_id;
-			reply_func(send_buffer, ind);
-		} else {
-			commands_printf("Warning: Could not set mcconf due to wrong signature");
-		}
-
-		mempools_free_mcconf(mcconf);
-#endif
-	} break;
-
-	case COMM_GET_MCCONF:
-	case COMM_GET_MCCONF_DEFAULT: {
-		mc_configuration *mcconf = mempools_alloc_mcconf();
-
-		if (packet_id == COMM_GET_MCCONF) {
-			*mcconf = *mc_interface_get_configuration();
-		} else {
-			confgenerator_set_defaults_mcconf(mcconf);
-			volatile const mc_configuration *mcconf_now = mc_interface_get_configuration();
-
-			// Keep the old offsets
-			mcconf->foc_offsets_current[0] = mcconf_now->foc_offsets_current[0];
-			mcconf->foc_offsets_current[1] = mcconf_now->foc_offsets_current[1];
-			mcconf->foc_offsets_current[2] = mcconf_now->foc_offsets_current[2];
-			mcconf->foc_offsets_voltage[0] = mcconf_now->foc_offsets_voltage[0];
-			mcconf->foc_offsets_voltage[1] = mcconf_now->foc_offsets_voltage[1];
-			mcconf->foc_offsets_voltage[2] = mcconf_now->foc_offsets_voltage[2];
-			mcconf->foc_offsets_voltage_undriven[0] = mcconf_now->foc_offsets_voltage_undriven[0];
-			mcconf->foc_offsets_voltage_undriven[1] = mcconf_now->foc_offsets_voltage_undriven[1];
-			mcconf->foc_offsets_voltage_undriven[2] = mcconf_now->foc_offsets_voltage_undriven[2];
-		}
-
-		commands_send_mcconf(packet_id, mcconf);
-		mempools_free_mcconf(mcconf);
-	} break;
-
-	case COMM_SET_APPCONF: {
-#ifndef	HW_APPCONF_READ_ONLY
-		app_configuration *appconf = mempools_alloc_appconf();
-		*appconf = *app_get_configuration();
-
-		if (confgenerator_deserialize_appconf(data, appconf)) {
-#ifdef HW_HAS_DUAL_MOTORS
-			// Ignore ID when setting second motor config
-			if (mc_interface_get_motor_thread() == 2) {
-				appconf->controller_id = app_get_configuration()->controller_id;
-			}
-#endif
-
-			conf_general_store_app_configuration(appconf);
-			app_set_configuration(appconf);
-			timeout_configure(appconf->timeout_msec, appconf->timeout_brake_current, appconf->kill_sw_mode);
-			chThdSleepMilliseconds(200);
-
-			int32_t ind = 0;
-			uint8_t send_buffer[50];
-			send_buffer[ind++] = packet_id;
-			reply_func(send_buffer, ind);
-		} else {
-			commands_printf("Warning: Could not set appconf due to wrong signature");
-		}
-
-		mempools_free_appconf(appconf);
-#endif
-	} break;
-
-	case COMM_GET_APPCONF:
-	case COMM_GET_APPCONF_DEFAULT: {
-		app_configuration *appconf = mempools_alloc_appconf();
-
-		if (packet_id == COMM_GET_APPCONF) {
-			*appconf = *app_get_configuration();
-		} else {
-			confgenerator_set_defaults_appconf(appconf);
-		}
-
-#ifdef HW_HAS_DUAL_MOTORS
-		if (mc_interface_get_motor_thread() == 2) {
-			appconf->controller_id = utils_second_motor_id();
-		}
-#endif
-
-		commands_send_appconf(packet_id, appconf);
-
-		mempools_free_appconf(appconf);
-	} break;
-
-	case COMM_SAMPLE_PRINT: {
-		uint16_t sample_len;
-		uint8_t decimation;
-		debug_sampling_mode mode;
-
-		int32_t ind = 0;
-		mode = data[ind++];
-		sample_len = buffer_get_uint16(data, &ind);
-		decimation = data[ind++];
-
-		bool raw = false;
-		if (len > (uint32_t)ind) {
-			raw = data[ind++];
-		}
-
-		mc_interface_sample_print_data(mode, sample_len, decimation, raw);
-	} break;
-
-	case COMM_REBOOT:
-		conf_general_store_backup_data();
-		// Lock the system and enter an infinite loop. The watchdog will reboot.
-		__disable_irq();
-		for(;;){};
-		break;
-
-	case COMM_ALIVE:
-		SHUTDOWN_RESET();
-		timeout_reset();
-		break;
-
-	case COMM_GET_DECODED_PPM: {
-		int32_t ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_GET_DECODED_PPM;
-		buffer_append_int32(send_buffer, (int32_t)(app_ppm_get_decoded_level() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(servodec_get_last_pulse_len(0) * 1000000.0), &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_GET_DECODED_ADC: {
-		int32_t ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_GET_DECODED_ADC;
-		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_decoded_level() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_decoded_level2() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage2() * 1000000.0), &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_GET_DECODED_CHUK: {
-		int32_t ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_GET_DECODED_CHUK;
-		buffer_append_int32(send_buffer, (int32_t)(app_nunchuk_get_decoded_chuk() * 1000000.0), &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_GET_DECODED_BALANCE: {
-		int32_t ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_GET_DECODED_BALANCE;
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_pid_output() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_pitch_angle() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_roll_angle() * 1000000.0), &ind);
-		buffer_append_uint32(send_buffer, app_balance_get_diff_time(), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_motor_current() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_debug1() * 1000000.0), &ind);
-		buffer_append_uint16(send_buffer, app_balance_get_state(), &ind);
-		buffer_append_uint16(send_buffer, app_balance_get_switch_state(), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_adc1() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_adc2() * 1000000.0), &ind);
-		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_debug2() * 1000000.0), &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_FORWARD_CAN: {
-		send_func_can_fwd = reply_func;
-
-#ifdef HW_HAS_DUAL_MOTORS
-		if (data[0] == utils_second_motor_id()) {
-			mc_interface_select_motor_thread(2);
-			commands_process_packet(data + 1, len - 1, reply_func);
-			mc_interface_select_motor_thread(1);
-		} else {
-			comm_can_send_buffer(data[0], data + 1, len - 1, 0);
-		}
-#else
-		comm_can_send_buffer(data[0], data + 1, len - 1, 0);
-#endif
-	} break;
-
-	case COMM_SET_CHUCK_DATA: {
-		chuck_data chuck_d_tmp;
-
-		int32_t ind = 0;
-		chuck_d_tmp.js_x = data[ind++];
-		chuck_d_tmp.js_y = data[ind++];
-		chuck_d_tmp.bt_c = data[ind++];
-		chuck_d_tmp.bt_z = data[ind++];
-		chuck_d_tmp.acc_x = buffer_get_int16(data, &ind);
-		chuck_d_tmp.acc_y = buffer_get_int16(data, &ind);
-		chuck_d_tmp.acc_z = buffer_get_int16(data, &ind);
-
-		if (len >= (unsigned int)ind + 2) {
-			chuck_d_tmp.rev_has_state = data[ind++];
-			chuck_d_tmp.is_rev = data[ind++];
-		} else {
-			chuck_d_tmp.rev_has_state = false;
-			chuck_d_tmp.is_rev = false;
-		}
-		app_nunchuk_update_output(&chuck_d_tmp);
-	} break;
-
-	case COMM_CUSTOM_APP_DATA:
-		if (appdata_func) {
-			appdata_func(data, len);
-		}
-		break;
-
-	case COMM_CUSTOM_HW_DATA:
-		if (hwdata_func) {
-			hwdata_func(data, len);
-		}
-		break;
-
-//	case COMM_NRF_START_PAIRING: {
-//		int32_t ind = 0;
-//		nrf_driver_start_pairing(buffer_get_int32(data, &ind));
-//
-//		ind = 0;
-//		uint8_t send_buffer[50];
-//		send_buffer[ind++] = packet_id;
-//		send_buffer[ind++] = NRF_PAIR_STARTED;
-//		reply_func(send_buffer, ind);
-//	} break;
-
-	case COMM_GPD_SET_FSW: {
-		timeout_reset();
-		int32_t ind = 0;
-		gpdrive_set_switching_frequency((float)buffer_get_int32(data, &ind));
-	} break;
-
-	case COMM_GPD_BUFFER_SIZE_LEFT: {
-		int32_t ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_GPD_BUFFER_SIZE_LEFT;
-		buffer_append_int32(send_buffer, gpdrive_buffer_size_left(), &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_GPD_FILL_BUFFER: {
-		timeout_reset();
-		int32_t ind = 0;
-		while (ind < (int)len) {
-			gpdrive_add_buffer_sample(buffer_get_float32_auto(data, &ind));
-		}
-	} break;
-
-	case COMM_GPD_OUTPUT_SAMPLE: {
-		timeout_reset();
-		int32_t ind = 0;
-		gpdrive_output_sample(buffer_get_float32_auto(data, &ind));
-	} break;
-
-	case COMM_GPD_SET_MODE: {
-		timeout_reset();
-		int32_t ind = 0;
-		gpdrive_set_mode(data[ind++]);
-	} break;
-
-	case COMM_GPD_FILL_BUFFER_INT8: {
-		timeout_reset();
-		int32_t ind = 0;
-		while (ind < (int)len) {
-			gpdrive_add_buffer_sample_int((int8_t)data[ind++]);
-		}
-	} break;
-
-	case COMM_GPD_FILL_BUFFER_INT16: {
-		timeout_reset();
-		int32_t ind = 0;
-		while (ind < (int)len) {
-			gpdrive_add_buffer_sample_int(buffer_get_int16(data, &ind));
-		}
-	} break;
-
-	case COMM_GPD_SET_BUFFER_INT_SCALE: {
-		int32_t ind = 0;
-		gpdrive_set_buffer_int_scale(buffer_get_float32_auto(data, &ind));
-	} break;
-
-	case COMM_GET_VALUES_SETUP:
-	case COMM_GET_VALUES_SETUP_SELECTIVE: {
-		setup_values val = mc_interface_get_setup_values();
-
-		float wh_batt_left = 0.0;
-		float battery_level = mc_interface_get_battery_level(&wh_batt_left);
-
-		int32_t ind = 0;
-		chMtxLock(&send_buffer_mutex);
-		uint8_t *send_buffer = send_buffer_global;
-		send_buffer[ind++] = packet_id;
-
-		uint32_t mask = 0xFFFFFFFF;
-		if (packet_id == COMM_GET_VALUES_SETUP_SELECTIVE) {
-			int32_t ind2 = 0;
-			mask = buffer_get_uint32(data, &ind2);
-			buffer_append_uint32(send_buffer, mask, &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 0)) {
-			buffer_append_float16(send_buffer, mc_interface_temp_fet_filtered(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 1)) {
-			buffer_append_float16(send_buffer, mc_interface_temp_motor_filtered(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 2)) {
-			buffer_append_float32(send_buffer, val.current_tot, 1e2, &ind);
-		}
-		if (mask & ((uint32_t)1 << 3)) {
-			buffer_append_float32(send_buffer, val.current_in_tot, 1e2, &ind);
-		}
-		if (mask & ((uint32_t)1 << 4)) {
-			buffer_append_float16(send_buffer, mc_interface_get_duty_cycle_now(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 5)) {
-			buffer_append_float32(send_buffer, mc_interface_get_rpm(), 1e0, &ind);
-		}
-		if (mask & ((uint32_t)1 << 6)) {
-			buffer_append_float32(send_buffer, mc_interface_get_speed(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 7)) {
-			buffer_append_float16(send_buffer, mc_interface_get_input_voltage_filtered(), 1e1, &ind);
-		}
-		if (mask & ((uint32_t)1 << 8)) {
-			buffer_append_float16(send_buffer, battery_level, 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 9)) {
-			buffer_append_float32(send_buffer, val.ah_tot, 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 10)) {
-			buffer_append_float32(send_buffer, val.ah_charge_tot, 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 11)) {
-			buffer_append_float32(send_buffer, val.wh_tot, 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 12)) {
-			buffer_append_float32(send_buffer, val.wh_charge_tot, 1e4, &ind);
-		}
-		if (mask & ((uint32_t)1 << 13)) {
-			buffer_append_float32(send_buffer, mc_interface_get_distance(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 14)) {
-			buffer_append_float32(send_buffer, mc_interface_get_distance_abs(), 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 15)) {
-			buffer_append_float32(send_buffer, mc_interface_get_pid_pos_now(), 1e6, &ind);
-		}
-		if (mask & ((uint32_t)1 << 16)) {
-			send_buffer[ind++] = mc_interface_get_fault();
-		}
-		if (mask & ((uint32_t)1 << 17)) {
-			uint8_t current_controller_id = app_get_configuration()->controller_id;
-#ifdef HW_HAS_DUAL_MOTORS
-			if (mc_interface_get_motor_thread() == 2) {
-				current_controller_id = utils_second_motor_id();
-			}
-#endif
-			send_buffer[ind++] = current_controller_id;
-		}
-		if (mask & ((uint32_t)1 << 18)) {
-			send_buffer[ind++] = val.num_vescs;
-		}
-		if (mask & ((uint32_t)1 << 19)) {
-			buffer_append_float32(send_buffer, wh_batt_left, 1e3, &ind);
-		}
-		if (mask & ((uint32_t)1 << 20)) {
-			buffer_append_uint32(send_buffer, mc_interface_get_odometer(), &ind);
-		}
-		if (mask & ((uint32_t)1 << 21)) {
-			buffer_append_uint32(send_buffer, chVTGetSystemTimeX() / (CH_CFG_ST_FREQUENCY / 1000), &ind);
-		}
-
-		reply_func(send_buffer, ind);
-		chMtxUnlock(&send_buffer_mutex);
-	    } break;
-
-	case COMM_SET_ODOMETER: {
-		int32_t ind = 0;
-		mc_interface_set_odometer(buffer_get_uint32(data, &ind));
-		timeout_reset();
-	} break;
-
-	case COMM_SET_MCCONF_TEMP:
-	case COMM_SET_MCCONF_TEMP_SETUP: {
-		mc_configuration *mcconf = mempools_alloc_mcconf();
-		*mcconf = *mc_interface_get_configuration();
-
-		int32_t ind = 0;
-		bool store = data[ind++];
-		bool forward_can = data[ind++];
-		bool ack = data[ind++];
-		bool divide_by_controllers = data[ind++];
-
-		float controller_num = 1.0;
-
-		if (divide_by_controllers) {
-			for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
-				can_status_msg *msg = comm_can_get_status_msg_index(i);
-				if (msg->id >= 0 && UTILS_AGE_S(msg->rx_time) < 0.1) {
-					controller_num += 1.0;
-				}
-			}
-		}
-
-		mcconf->l_current_min_scale = buffer_get_float32_auto(data, &ind);
-		mcconf->l_current_max_scale = buffer_get_float32_auto(data, &ind);
-
-		if (packet_id == COMM_SET_MCCONF_TEMP_SETUP) {
-			const float fact = ((mcconf->si_motor_poles / 2.0) * 60.0 *
-					mcconf->si_gear_ratio) / (mcconf->si_wheel_diameter * M_PI);
-
-			mcconf->l_min_erpm = buffer_get_float32_auto(data, &ind) * fact;
-			mcconf->l_max_erpm = buffer_get_float32_auto(data, &ind) * fact;
-
-			// Write computed RPM back and change forwarded packet id to
-			// COMM_SET_MCCONF_TEMP. This way only the master has to be
-			// aware of the setup information.
-			ind -= 8;
-			buffer_append_float32_auto(data, mcconf->l_min_erpm, &ind);
-			buffer_append_float32_auto(data, mcconf->l_max_erpm, &ind);
-		} else {
-			mcconf->l_min_erpm = buffer_get_float32_auto(data, &ind);
-			mcconf->l_max_erpm = buffer_get_float32_auto(data, &ind);
-		}
-
-		mcconf->l_min_duty = buffer_get_float32_auto(data, &ind);
-		mcconf->l_max_duty = buffer_get_float32_auto(data, &ind);
-		mcconf->l_watt_min = buffer_get_float32_auto(data, &ind) / controller_num;
-		mcconf->l_watt_max = buffer_get_float32_auto(data, &ind) / controller_num;
-
-		// Write divided data back to the buffer, as the other controllers have no way to tell
-		// how many controllers are on the bus and thus need pre-divided data.
-		// We set divide by controllers to false before forwarding.
-		ind -= 8;
-		buffer_append_float32_auto(data, mcconf->l_watt_min, &ind);
-		buffer_append_float32_auto(data, mcconf->l_watt_max, &ind);
-
-		// Battery limits can be set optionally in a backwards-compatible way.
-		if ((int32_t)len >= (ind + 8)) {
-			mcconf->l_in_current_min = buffer_get_float32_auto(data, &ind);
-			mcconf->l_in_current_max = buffer_get_float32_auto(data, &ind);
-		}
-
-		mcconf->lo_current_min = mcconf->l_current_min * mcconf->l_current_min_scale;
-		mcconf->lo_current_max = mcconf->l_current_max * mcconf->l_current_max_scale;
-		mcconf->lo_current_motor_min_now = mcconf->lo_current_min;
-		mcconf->lo_current_motor_max_now = mcconf->lo_current_max;
-		mcconf->lo_in_current_min = mcconf->l_in_current_min;
-		mcconf->lo_in_current_max = mcconf->l_in_current_max;
-
-		commands_apply_mcconf_hw_limits(mcconf);
-
-		if (store) {
-			conf_general_store_mc_configuration(mcconf, mc_interface_get_motor_thread() == 2);
-		}
-
-		mc_interface_set_configuration(mcconf);
-
-		if (forward_can) {
-			data[-1] = COMM_SET_MCCONF_TEMP;
-			data[1] = 0; // No more forward
-			data[2] = 0; // No ack
-			data[3] = 0; // No dividing, see comment above
-
-			// TODO: Maybe broadcast on CAN-bus?
-			for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
-				can_status_msg *msg = comm_can_get_status_msg_index(i);
-				if (msg->id >= 0 && UTILS_AGE_S(msg->rx_time) < 0.1) {
-					comm_can_send_buffer(msg->id, data - 1, len + 1, 0);
-				}
-			}
-		}
-
-		if (ack) {
-			ind = 0;
-			uint8_t send_buffer[50];
-			send_buffer[ind++] = packet_id;
-			reply_func(send_buffer, ind);
-		}
-
-		mempools_free_mcconf(mcconf);
-	} break;
-
-	case COMM_GET_MCCONF_TEMP: {
-		mc_configuration *mcconf = mempools_alloc_mcconf();
-		*mcconf = *mc_interface_get_configuration();
-		int32_t ind = 0;
-		uint8_t send_buffer[60];
-
-		send_buffer[ind++] = packet_id;
-		buffer_append_float32_auto(send_buffer, mcconf->l_current_min_scale, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_current_max_scale, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_min_erpm, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_max_erpm, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_min_duty, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_max_duty, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_watt_min, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_watt_max, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_in_current_min, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->l_in_current_max, &ind);
-		// Setup config needed for speed calculation
-		send_buffer[ind++] = (uint8_t)mcconf->si_motor_poles;
-		buffer_append_float32_auto(send_buffer, mcconf->si_gear_ratio, &ind);
-		buffer_append_float32_auto(send_buffer, mcconf->si_wheel_diameter, &ind);
-
-		mempools_free_mcconf(mcconf);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_EXT_NRF_PRESENT: {
-		if (!conf_general_permanent_nrf_found) {
-			nrf_driver_init_ext_nrf();
-			if (!nrf_driver_is_pairing()) {
-				const app_configuration *appconf = app_get_configuration();
-				uint8_t send_buffer[50];
-				send_buffer[0] = COMM_EXT_NRF_ESB_SET_CH_ADDR;
-				send_buffer[1] = appconf->app_nrf_conf.channel;
-				send_buffer[2] = appconf->app_nrf_conf.address[0];
-				send_buffer[3] = appconf->app_nrf_conf.address[1];
-				send_buffer[4] = appconf->app_nrf_conf.address[2];
-				commands_send_packet_nrf(send_buffer, 5);
-			}
-		}
-	} break;
-
-	case COMM_EXT_NRF_ESB_RX_DATA: {
-		if (len > 2) {
-			unsigned short crc = crc16((unsigned char*)data, len - 2);
-
-			if (crc	== ((unsigned short) data[len - 2] << 8 |
-					(unsigned short) data[len - 1])) {
-				nrf_driver_process_packet(data, len);
-			}
-		}
-	} break;
-
-	case COMM_APP_DISABLE_OUTPUT: {
-		int32_t ind = 0;
-		bool fwd_can = data[ind++];
-		int time = buffer_get_int32(data, &ind);
-		app_disable_output(time);
-
-		if (fwd_can) {
-			data[0] = 0; // Don't continue forwarding
-			comm_can_send_buffer(255, data - 1, len + 1, 0);
-		}
-	} break;
-
-	case COMM_TERMINAL_CMD_SYNC:
-		data[len] = '\0';
-		chMtxLock(&terminal_mutex);
-		terminal_process_string((char*)data);
-		chMtxUnlock(&terminal_mutex);
-		break;
-
-	case COMM_GET_IMU_DATA: {
-		int32_t ind = 0;
-		uint8_t send_buffer[70];
-		send_buffer[ind++] = packet_id;
-
-		int32_t ind2 = 0;
-		uint32_t mask = buffer_get_uint16(data, &ind2);
-
-		float rpy[3], acc[3], gyro[3], mag[3], q[4];
-		imu_get_rpy(rpy);
-		imu_get_accel(acc);
-		imu_get_gyro(gyro);
-		imu_get_mag(mag);
-		imu_get_quaternions(q);
-
-		buffer_append_uint16(send_buffer, mask, &ind);
-
-		if (mask & ((uint32_t)1 << 0)) {
-			buffer_append_float32_auto(send_buffer, rpy[0], &ind);
-		}
-		if (mask & ((uint32_t)1 << 1)) {
-			buffer_append_float32_auto(send_buffer, rpy[1], &ind);
-		}
-		if (mask & ((uint32_t)1 << 2)) {
-			buffer_append_float32_auto(send_buffer, rpy[2], &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 3)) {
-			buffer_append_float32_auto(send_buffer, acc[0], &ind);
-		}
-		if (mask & ((uint32_t)1 << 4)) {
-			buffer_append_float32_auto(send_buffer, acc[1], &ind);
-		}
-		if (mask & ((uint32_t)1 << 5)) {
-			buffer_append_float32_auto(send_buffer, acc[2], &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 6)) {
-			buffer_append_float32_auto(send_buffer, gyro[0], &ind);
-		}
-		if (mask & ((uint32_t)1 << 7)) {
-			buffer_append_float32_auto(send_buffer, gyro[1], &ind);
-		}
-		if (mask & ((uint32_t)1 << 8)) {
-			buffer_append_float32_auto(send_buffer, gyro[2], &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 9)) {
-			buffer_append_float32_auto(send_buffer, mag[0], &ind);
-		}
-		if (mask & ((uint32_t)1 << 10)) {
-			buffer_append_float32_auto(send_buffer, mag[1], &ind);
-		}
-		if (mask & ((uint32_t)1 << 11)) {
-			buffer_append_float32_auto(send_buffer, mag[2], &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 12)) {
-			buffer_append_float32_auto(send_buffer, q[0], &ind);
-		}
-		if (mask & ((uint32_t)1 << 13)) {
-			buffer_append_float32_auto(send_buffer, q[1], &ind);
-		}
-		if (mask & ((uint32_t)1 << 14)) {
-			buffer_append_float32_auto(send_buffer, q[2], &ind);
-		}
-		if (mask & ((uint32_t)1 << 15)) {
-			buffer_append_float32_auto(send_buffer, q[3], &ind);
-		}
-
-		if (mask & ((uint32_t)1 << 16)) {
-			uint8_t current_controller_id = app_get_configuration()->controller_id;
-#ifdef HW_HAS_DUAL_MOTORS
-			if (mc_interface_get_motor_thread() == 2) {
-				current_controller_id = utils_second_motor_id();
-			}
-#endif
-			send_buffer[ind++] = current_controller_id;
-		}
-
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_ERASE_BOOTLOADER_ALL_CAN:
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(6000);
-		}
-
-		data[-1] = COMM_ERASE_BOOTLOADER;
-		comm_can_send_buffer(255, data - 1, len + 1, 2);
-		chThdSleepMilliseconds(1500);
-		/* Falls through. */
-		/* no break */
-	case COMM_ERASE_BOOTLOADER: {
-		int32_t ind = 0;
-
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(6000);
-		}
-		uint16_t flash_res = flash_helper_erase_bootloader();
-
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_ERASE_BOOTLOADER;
-		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_SET_CURRENT_REL: {
-		int32_t ind = 0;
-		mc_interface_set_current_rel(buffer_get_float32(data, 1e5, &ind));
-		timeout_reset();
-	} break;
-
-	case COMM_CAN_FWD_FRAME: {
-		int32_t ind = 0;
-		uint32_t id = buffer_get_uint32(data, &ind);
-		bool is_ext = data[ind++];
-
-		if (is_ext) {
-			comm_can_transmit_eid(id, data + ind, len - ind);
-		} else {
-			comm_can_transmit_sid(id, data + ind, len - ind);
-		}
-	} break;
-
-	case COMM_SET_BATTERY_CUT: {
-		int32_t ind = 0;
-		float start = buffer_get_float32(data, 1e3, &ind);
-		float end = buffer_get_float32(data, 1e3, &ind);
-		bool store = data[ind++];
-		bool fwd_can = data[ind++];
-
-		if (fwd_can) {
-			comm_can_conf_battery_cut(255, store, start, end);
-		}
-
-		mc_configuration *mcconf = mempools_alloc_mcconf();
-		*mcconf = *mc_interface_get_configuration();
-
-		if (mcconf->l_battery_cut_start != start || mcconf->l_battery_cut_end != end) {
-			mcconf->l_battery_cut_start = start;
-			mcconf->l_battery_cut_end = end;
-
-			if (store) {
-				conf_general_store_mc_configuration(mcconf,
-						mc_interface_get_motor_thread() == 2);
-			}
-
-			mc_interface_set_configuration(mcconf);
-		}
-
-		mempools_free_mcconf(mcconf);
-
-		// Send ack
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = packet_id;
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_GET_BATTERY_CUT: {
-		int32_t ind = 0;
-		uint8_t send_buffer[60];
-		volatile const mc_configuration *mcconf = mc_interface_get_configuration();
-
-		send_buffer[ind++] = packet_id;
-		buffer_append_float32(send_buffer, mcconf->l_battery_cut_start, 1e3, &ind);
-		buffer_append_float32(send_buffer, mcconf->l_battery_cut_end, 1e3, &ind);
-
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_SET_CAN_MODE: {
-		int32_t ind = 0;
-		bool store = data[ind++];
-		bool ack = data[ind++];
-		int mode = data[ind++];
-
-		app_configuration *appconf = mempools_alloc_appconf();
-		*appconf = *app_get_configuration();
-		appconf->can_mode = mode;
-
-		if (store) {
-			conf_general_store_app_configuration(appconf);
-		}
-
-		app_set_configuration(appconf);
-
-		mempools_free_appconf(appconf);
-
-		if (ack) {
-			ind = 0;
-			uint8_t send_buffer[50];
-			send_buffer[ind++] = packet_id;
-			reply_func(send_buffer, ind);
-		}
-	} break;
-
-	case COMM_BMS_GET_VALUES:
-	case COMM_BMS_SET_CHARGE_ALLOWED:
-	case COMM_BMS_SET_BALANCE_OVERRIDE:
-	case COMM_BMS_RESET_COUNTERS:
-	case COMM_BMS_FORCE_BALANCE:
-	case COMM_BMS_ZERO_CURRENT_OFFSET: {
-		bms_process_cmd(data - 1, len + 1, reply_func);
-		break;
-	}
-
-	// Power switch
-	case COMM_PSW_GET_STATUS: {
-		int32_t ind = 0;
-		bool by_id = data[ind++];
-		int id_ind = buffer_get_int16(data, &ind);
-
-		int psws_num = 0;
-		for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
-			psw_status *stat = comm_can_get_psw_status_index(i);
-			if (stat->id >= 0) {
-				psws_num++;
-			} else {
-				break;
-			}
-		}
-
-		psw_status *stat = 0;
-		if (by_id) {
-			stat = comm_can_get_psw_status_id(id_ind);
-		} else if (id_ind < psws_num) {
-			stat = comm_can_get_psw_status_index(id_ind);
-		}
-
-		if (stat) {
-			ind = 0;
-			uint8_t send_buffer[70];
-
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, stat->id, &ind);
-			buffer_append_int16(send_buffer, psws_num, &ind);
-			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(stat->rx_time), &ind);
-			buffer_append_float32_auto(send_buffer, stat->v_in, &ind);
-			buffer_append_float32_auto(send_buffer, stat->v_out, &ind);
-			buffer_append_float32_auto(send_buffer, stat->temp, &ind);
-			send_buffer[ind++] = stat->is_out_on;
-			send_buffer[ind++] = stat->is_pch_on;
-			send_buffer[ind++] = stat->is_dsc_on;
-
-			reply_func(send_buffer, ind);
-		}
-	} break;
-
-	case COMM_PSW_SWITCH: {
-		int32_t ind = 0;
-		int id = buffer_get_int16(data, &ind);
-		bool is_on = data[ind++];
-		bool plot = data[ind++];
-		comm_can_psw_switch(id, is_on, plot);
-	} break;
-
-	case COMM_GET_QML_UI_HW: {
-#ifdef QMLUI_SOURCE_HW
-		int32_t ind = 0;
-
-		int32_t len_qml = buffer_get_int32(data, &ind);
-		int32_t ofs_qml = buffer_get_int32(data, &ind);
-
-		if ((len_qml + ofs_qml) > DATA_QML_HW_SIZE || len_qml > (PACKET_MAX_PL_LEN - 10)) {
-			break;
-		}
-
-		chMtxLock(&send_buffer_mutex);
-		ind = 0;
-		send_buffer_global[ind++] = packet_id;
-		buffer_append_int32(send_buffer_global, DATA_QML_HW_SIZE, &ind);
-		buffer_append_int32(send_buffer_global, ofs_qml, &ind);
-		memcpy(send_buffer_global + ind, data_qml_hw + ofs_qml, len_qml);
-		ind += len_qml;
-		reply_func(send_buffer_global, ind);
-
-		chMtxUnlock(&send_buffer_mutex);
-#endif
-	} break;
-
-	case COMM_GET_QML_UI_APP: {
-		int32_t ind = 0;
-
-		int32_t len_qml = buffer_get_int32(data, &ind);
-		int32_t ofs_qml = buffer_get_int32(data, &ind);
-
-		uint8_t *qmlui_data = flash_helper_qmlui_data();
-		int32_t qmlui_len = flash_helper_qmlui_size();
-
-#ifdef QMLUI_SOURCE_APP
-		qmlui_data = data_qml_app;
-		qmlui_len = DATA_QML_APP_SIZE;
-#endif
-
-		if (!qmlui_data) {
-			break;
-		}
-
-		if ((len_qml + ofs_qml) > qmlui_len || len_qml > (PACKET_MAX_PL_LEN - 10)) {
-			break;
-		}
-
-		chMtxLock(&send_buffer_mutex);
-		ind = 0;
-		send_buffer_global[ind++] = packet_id;
-		buffer_append_int32(send_buffer_global, qmlui_len, &ind);
-		buffer_append_int32(send_buffer_global, ofs_qml, &ind);
-		memcpy(send_buffer_global + ind, qmlui_data + ofs_qml, len_qml);
-		ind += len_qml;
-		reply_func(send_buffer_global, ind);
-
-		chMtxUnlock(&send_buffer_mutex);
-	} break;
-
-	case COMM_QMLUI_ERASE: {
-		int32_t ind = 0;
-
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(6000);
-		}
-		uint16_t flash_res = flash_helper_erase_qmlui();
-
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_QMLUI_ERASE;
-		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_QMLUI_WRITE: {
-		int32_t ind = 0;
-		uint32_t qmlui_offset = buffer_get_uint32(data, &ind);
-
-		if (nrf_driver_ext_nrf_running()) {
-			nrf_driver_pause(2000);
-		}
-		uint16_t flash_res = flash_helper_write_qmlui(qmlui_offset, data + ind, len - ind);
-
-		SHUTDOWN_RESET();
-
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = COMM_QMLUI_WRITE;
-		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
-		buffer_append_uint32(send_buffer, qmlui_offset, &ind);
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_IO_BOARD_GET_ALL: {
-		int32_t ind = 0;
-		int id = buffer_get_int16(data, &ind);
-
-		io_board_adc_values *adc_1_4 = comm_can_get_io_board_adc_1_4_id(id);
-		io_board_adc_values *adc_5_8 = comm_can_get_io_board_adc_5_8_id(id);
-		io_board_digial_inputs *digital_in = comm_can_get_io_board_digital_in_id(id);
-
-		if (!adc_1_4 && !adc_5_8 && !digital_in) {
-			break;
-		}
-
-		uint8_t send_buffer[70];
-		ind = 0;
-		send_buffer[ind++] = packet_id;
-		buffer_append_int16(send_buffer, id, &ind);
-
-		if (adc_1_4) {
-			send_buffer[ind++] = 1;
-			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(adc_1_4->rx_time), &ind);
-			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[0], 1e2, &ind);
-			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[1], 1e2, &ind);
-			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[2], 1e2, &ind);
-			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[3], 1e2, &ind);
-		}
-
-		if (adc_5_8) {
-			send_buffer[ind++] = 2;
-			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(adc_1_4->rx_time), &ind);
-			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[0], 1e2, &ind);
-			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[1], 1e2, &ind);
-			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[2], 1e2, &ind);
-			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[3], 1e2, &ind);
-		}
-
-		if (digital_in) {
-			send_buffer[ind++] = 3;
-			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(adc_1_4->rx_time), &ind);
-			buffer_append_uint32(send_buffer, (digital_in->inputs >> 32) & 0xFFFFFFFF, &ind);
-			buffer_append_uint32(send_buffer, (digital_in->inputs >> 0) & 0xFFFFFFFF, &ind);
-		}
-
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_IO_BOARD_SET_PWM: {
-		int32_t ind = 0;
-		int id = buffer_get_int16(data, &ind);
-		int channel = buffer_get_int16(data, &ind);
-		float duty = buffer_get_float32_auto(data, &ind);
-		comm_can_io_board_set_output_pwm(id, channel, duty);
-	} break;
-
-	case COMM_IO_BOARD_SET_DIGITAL: {
-		int32_t ind = 0;
-		int id = buffer_get_int16(data, &ind);
-		int channel = buffer_get_int16(data, &ind);
-		bool on = data[ind++];
-		comm_can_io_board_set_output_digital(id, channel, on);
-	} break;
-
-	case COMM_GET_STATS: {
-		int32_t ind = 0;
-		uint32_t mask = buffer_get_uint16(data, &ind);
-
-		ind = 0;
-		uint8_t send_buffer[60];
-		send_buffer[ind++] = packet_id;
-		buffer_append_uint32(send_buffer, mask, &ind);
-
-		if (mask & ((uint32_t)1 << 0)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_speed_avg(), &ind); }
-		if (mask & ((uint32_t)1 << 1)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_speed_max(), &ind); }
-		if (mask & ((uint32_t)1 << 2)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_power_avg(), &ind); }
-		if (mask & ((uint32_t)1 << 3)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_power_max(), &ind); }
-		if (mask & ((uint32_t)1 << 4)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_current_avg(), &ind); }
-		if (mask & ((uint32_t)1 << 5)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_current_max(), &ind); }
-		if (mask & ((uint32_t)1 << 6)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_mosfet_avg(), &ind); }
-		if (mask & ((uint32_t)1 << 7)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_mosfet_max(), &ind); }
-		if (mask & ((uint32_t)1 << 8)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_motor_avg(), &ind); }
-		if (mask & ((uint32_t)1 << 9)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_motor_max(), &ind); }
-		if (mask & ((uint32_t)1 << 10)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_count_time(), &ind); }
-
-		reply_func(send_buffer, ind);
-	} break;
-
-	case COMM_RESET_STATS: {
-		bool ack = false;
-
-		if (len > 0) {
-			ack = data[0];
-		}
-
-		mc_interface_stat_reset();
-
-		if (ack) {
-			int32_t ind = 0;
-			uint8_t send_buffer[50];
-			send_buffer[ind++] = packet_id;
-			reply_func(send_buffer, ind);
-		}
-	} break;
-
-	// Blocking commands. Only one of them runs at any given time, in their
-	// own thread. If other blocking commands come before the previous one has
-	// finished, they are discarded.
-	case COMM_TERMINAL_CMD:
-	case COMM_DETECT_MOTOR_PARAM:
-	case COMM_DETECT_MOTOR_R_L:
-	case COMM_DETECT_MOTOR_FLUX_LINKAGE:
-	case COMM_DETECT_ENCODER:
-	case COMM_DETECT_HALL_FOC:
-	case COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP:
-	case COMM_DETECT_APPLY_ALL_FOC:
-	case COMM_PING_CAN:
-	case COMM_BM_CONNECT:
-	case COMM_BM_ERASE_FLASH_ALL:
-	case COMM_BM_WRITE_FLASH_LZO:
-	case COMM_BM_WRITE_FLASH:
-	case COMM_BM_REBOOT:
-	case COMM_BM_DISCONNECT:
-	case COMM_BM_MAP_PINS_DEFAULT:
-	case COMM_BM_MAP_PINS_NRF5X:
-	case COMM_BM_MEM_READ:
-	case COMM_GET_IMU_CALIBRATION:
-	case COMM_BM_MEM_WRITE:
-		if (!is_blocking) {
-			memcpy(blocking_thread_cmd_buffer, data - 1, len + 1);
-			blocking_thread_cmd_len = len + 1;
-			is_blocking = true;
-			blocking_thread_motor = mc_interface_get_motor_thread();
-			send_func_blocking = reply_func;
-			chEvtSignal(blocking_tp, (eventmask_t)1);
-		}
-		break;
-
-	default:
-		break;
-	}
+            
+            fw_version_sent_cnt++;
+            
+            reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_JUMP_TO_BOOTLOADER_ALL_CAN:
+            VESC_EMULATOR_NO_SUPPORT
+            //        VESC_EMULATOR_NO_SUPPORT;
+//            data[-1] = COMM_JUMP_TO_BOOTLOADER;
+//            comm_can_send_buffer(255, data - 1, len + 1, 2);
+//            chThdSleepMilliseconds(100);
+            /* Falls through. */
+            /* no break */
+        case COMM_JUMP_TO_BOOTLOADER:
+            VESC_EMULATOR_NO_SUPPORT
+            //		flash_helper_jump_to_bootloader();
+            break;
+            
+        case COMM_ERASE_NEW_APP_ALL_CAN:
+            VESC_EMULATOR_NO_SUPPORT
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(6000);
+            //		}
+            //
+            //		data[-1] = COMM_ERASE_NEW_APP;
+            //		comm_can_send_buffer(255, data - 1, len + 1, 2);
+            //		chThdSleepMilliseconds(1500);
+            /* Falls through. */
+            /* no break */
+        case COMM_ERASE_NEW_APP: {
+            VESC_EMULATOR_NO_SUPPORT
+            //        int32_t ind = 0;
+            //
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(6000);
+            //		}
+            //		uint16_t flash_res = flash_helper_erase_new_app(buffer_get_uint32(data, &ind));
+            //
+            //		ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_ERASE_NEW_APP;
+            //		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_WRITE_NEW_APP_DATA_ALL_CAN_LZO:
+        case COMM_WRITE_NEW_APP_DATA_ALL_CAN:
+            VESC_EMULATOR_NO_SUPPORT
+            //		if (packet_id == COMM_WRITE_NEW_APP_DATA_ALL_CAN_LZO) {
+            //			chMtxLock(&send_buffer_mutex);
+            //			memcpy(send_buffer_global, data + 6, len - 6);
+            //			int32_t ind = 4;
+            //			lzo_uint decompressed_len = buffer_get_uint16(data, &ind);
+            //			lzo1x_decompress_safe(send_buffer_global, len - 6, data + 4, &decompressed_len, NULL);
+            //			chMtxUnlock(&send_buffer_mutex);
+            //			len = decompressed_len + 4;
+            //		}
+            //
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(2000);
+            //		}
+            //
+            //		data[-1] = COMM_WRITE_NEW_APP_DATA;
+            //
+            //		comm_can_send_buffer(255, data - 1, len + 1, 2);
+            /* Falls through. */
+            /* no break */
+        case COMM_WRITE_NEW_APP_DATA_LZO:
+        case COMM_WRITE_NEW_APP_DATA:
+            VESC_EMULATOR_NO_SUPPORT{
+                //		if (packet_id == COMM_WRITE_NEW_APP_DATA_LZO) {
+                //			chMtxLock(&send_buffer_mutex);
+                //			memcpy(send_buffer_global, data + 6, len - 6);
+                //			int32_t ind = 4;
+                //			lzo_uint decompressed_len = buffer_get_uint16(data, &ind);
+                //			lzo1x_decompress_safe(send_buffer_global, len - 6, data + 4, &decompressed_len, NULL);
+                //			chMtxUnlock(&send_buffer_mutex);
+                //			len = decompressed_len + 4;
+                //		}
+                //
+                //		int32_t ind = 0;
+                //		uint32_t new_app_offset = buffer_get_uint32(data, &ind);
+                //
+                //		if (nrf_driver_ext_nrf_running()) {
+                //			nrf_driver_pause(2000);
+                //		}
+                //		uint16_t flash_res = flash_helper_write_new_app_data(new_app_offset, data + ind, len - ind);
+                //
+                //		SHUTDOWN_RESET();
+                //
+                //		ind = 0;
+                //		uint8_t send_buffer[50];
+                //		send_buffer[ind++] = COMM_WRITE_NEW_APP_DATA;
+                //		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+                //		buffer_append_uint32(send_buffer, new_app_offset, &ind);
+                //		reply_func(send_buffer, ind);
+            } break;
+            
+        case COMM_GET_VALUES:
+        case COMM_GET_VALUES_SELECTIVE:
+            VESC_EMULATOR_NO_SUPPORT
+        {
+            //		int32_t ind = 0;
+            //		chMtxLock(&send_buffer_mutex);
+            //		uint8_t *send_buffer = send_buffer_global;
+            //		send_buffer[ind++] = packet_id;
+            //
+            //		uint32_t mask = 0xFFFFFFFF;
+            //		if (packet_id == COMM_GET_VALUES_SELECTIVE) {
+            //			int32_t ind2 = 0;
+            //			mask = buffer_get_uint32(data, &ind2);
+            //			buffer_append_uint32(send_buffer, mask, &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 0)) {
+            //			buffer_append_float16(send_buffer, mc_interface_temp_fet_filtered(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 1)) {
+            //			buffer_append_float16(send_buffer, mc_interface_temp_motor_filtered(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 2)) {
+            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_motor_current(), 1e2, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 3)) {
+            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_input_current(), 1e2, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 4)) {
+            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_id(), 1e2, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 5)) {
+            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_iq(), 1e2, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 6)) {
+            //			buffer_append_float16(send_buffer, mc_interface_get_duty_cycle_now(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 7)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_rpm(), 1e0, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 8)) {
+            //			buffer_append_float16(send_buffer, mc_interface_get_input_voltage_filtered(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 9)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_amp_hours(false), 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 10)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_amp_hours_charged(false), 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 11)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_watt_hours(false), 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 12)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_watt_hours_charged(false), 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 13)) {
+            //			buffer_append_int32(send_buffer, mc_interface_get_tachometer_value(false), &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 14)) {
+            //			buffer_append_int32(send_buffer, mc_interface_get_tachometer_abs_value(false), &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 15)) {
+            //			send_buffer[ind++] = mc_interface_get_fault();
+            //		}
+            //		if (mask & ((uint32_t)1 << 16)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_pid_pos_now(), 1e6, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 17)) {
+            //			uint8_t current_controller_id = app_get_configuration()->controller_id;
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //			if (mc_interface_get_motor_thread() == 2) {
+            //				current_controller_id = utils_second_motor_id();
+            //			}
+            //#endif
+            //			send_buffer[ind++] = current_controller_id;
+            //		}
+            //		if (mask & ((uint32_t)1 << 18)) {
+            //			buffer_append_float16(send_buffer, NTC_TEMP_MOS1(), 1e1, &ind);
+            //			buffer_append_float16(send_buffer, NTC_TEMP_MOS2(), 1e1, &ind);
+            //			buffer_append_float16(send_buffer, NTC_TEMP_MOS3(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 19)) {
+            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vd(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 20)) {
+            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vq(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 21)) {
+            //			uint8_t status = 0;
+            //			status |= timeout_has_timeout();
+            //			status |= timeout_kill_sw_active() << 1;
+            //			send_buffer[ind++] = status;
+            //		}
+            //
+            //		reply_func(send_buffer, ind);
+            //		chMtxUnlock(&send_buffer_mutex);
+        } break;
+            
+        case COMM_SET_DUTY: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_duty((float)buffer_get_int32(data, &ind) / 100000.0);
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_CURRENT: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_current((float)buffer_get_int32(data, &ind) / 1000.0);
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_CURRENT_BRAKE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_brake_current((float)buffer_get_int32(data, &ind) / 1000.0);
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_RPM: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_pid_speed((float)buffer_get_int32(data, &ind));
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_POS: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_pid_pos((float)buffer_get_int32(data, &ind) / 1000000.0);
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_HANDBRAKE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_handbrake(buffer_get_float32(data, 1e3, &ind));
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_DETECT: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		display_position_mode = data[ind++];
+            //
+            //		if (mc_interface_get_configuration()->motor_type == MOTOR_TYPE_BLDC) {
+            //			if (display_position_mode == DISP_POS_MODE_NONE) {
+            //				mc_interface_release_motor();
+            //			} else if (display_position_mode == DISP_POS_MODE_INDUCTANCE) {
+            //				mcpwm_set_detect();
+            //			}
+            //		}
+            //
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_SERVO_POS: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		servo_simple_set_output(buffer_get_float16(data, 1000.0, &ind));
+        } break;
+            
+        case COMM_SET_MCCONF: { VESC_EMULATOR_NO_SUPPORT
+            //#ifndef	HW_MCCONF_READ_ONLY
+            //		mc_configuration *mcconf = mempools_alloc_mcconf();
+            //		*mcconf = *mc_interface_get_configuration();
+            //
+            //		if (confgenerator_deserialize_mcconf(data, mcconf)) {
+            //			utils_truncate_number(&mcconf->l_current_max_scale , 0.0, 1.0);
+            //			utils_truncate_number(&mcconf->l_current_min_scale , 0.0, 1.0);
+            //
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //			mcconf->motor_type = MOTOR_TYPE_FOC;
+            //#endif
+            //
+            //			mcconf->lo_current_max = mcconf->l_current_max * mcconf->l_current_max_scale;
+            //			mcconf->lo_current_min = mcconf->l_current_min * mcconf->l_current_min_scale;
+            //			mcconf->lo_in_current_max = mcconf->l_in_current_max;
+            //			mcconf->lo_in_current_min = mcconf->l_in_current_min;
+            //			mcconf->lo_current_motor_max_now = mcconf->lo_current_max;
+            //			mcconf->lo_current_motor_min_now = mcconf->lo_current_min;
+            //
+            //			commands_apply_mcconf_hw_limits(mcconf);
+            //			conf_general_store_mc_configuration(mcconf, mc_interface_get_motor_thread() == 2);
+            //			mc_interface_set_configuration(mcconf);
+            //			chThdSleepMilliseconds(200);
+            //
+            //			int32_t ind = 0;
+            //			uint8_t send_buffer[50];
+            //			send_buffer[ind++] = packet_id;
+            //			reply_func(send_buffer, ind);
+            //		} else {
+            //			commands_printf("Warning: Could not set mcconf due to wrong signature");
+            //		}
+            //
+            //		mempools_free_mcconf(mcconf);
+            //#endif
+        } break;
+            
+        case COMM_GET_MCCONF:
+        case COMM_GET_MCCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
+            //		mc_configuration *mcconf = mempools_alloc_mcconf();
+            //
+            //		if (packet_id == COMM_GET_MCCONF) {
+            //			*mcconf = *mc_interface_get_configuration();
+            //		} else {
+            //			confgenerator_set_defaults_mcconf(mcconf);
+            //			volatile const mc_configuration *mcconf_now = mc_interface_get_configuration();
+            //
+            //			// Keep the old offsets
+            //			mcconf->foc_offsets_current[0] = mcconf_now->foc_offsets_current[0];
+            //			mcconf->foc_offsets_current[1] = mcconf_now->foc_offsets_current[1];
+            //			mcconf->foc_offsets_current[2] = mcconf_now->foc_offsets_current[2];
+            //			mcconf->foc_offsets_voltage[0] = mcconf_now->foc_offsets_voltage[0];
+            //			mcconf->foc_offsets_voltage[1] = mcconf_now->foc_offsets_voltage[1];
+            //			mcconf->foc_offsets_voltage[2] = mcconf_now->foc_offsets_voltage[2];
+            //			mcconf->foc_offsets_voltage_undriven[0] = mcconf_now->foc_offsets_voltage_undriven[0];
+            //			mcconf->foc_offsets_voltage_undriven[1] = mcconf_now->foc_offsets_voltage_undriven[1];
+            //			mcconf->foc_offsets_voltage_undriven[2] = mcconf_now->foc_offsets_voltage_undriven[2];
+            //		}
+            //
+            //		commands_send_mcconf(packet_id, mcconf);
+            //		mempools_free_mcconf(mcconf);
+        } break;
+            
+        case COMM_SET_APPCONF: { VESC_EMULATOR_NO_SUPPORT
+            //#ifndef	HW_APPCONF_READ_ONLY
+            //		app_configuration *appconf = mempools_alloc_appconf();
+            //		*appconf = *app_get_configuration();
+            //
+            //		if (confgenerator_deserialize_appconf(data, appconf)) {
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //			// Ignore ID when setting second motor config
+            //			if (mc_interface_get_motor_thread() == 2) {
+            //				appconf->controller_id = app_get_configuration()->controller_id;
+            //			}
+            //#endif
+            //
+            //			conf_general_store_app_configuration(appconf);
+            //			app_set_configuration(appconf);
+            //			timeout_configure(appconf->timeout_msec, appconf->timeout_brake_current, appconf->kill_sw_mode);
+            //			chThdSleepMilliseconds(200);
+            //
+            //			int32_t ind = 0;
+            //			uint8_t send_buffer[50];
+            //			send_buffer[ind++] = packet_id;
+            //			reply_func(send_buffer, ind);
+            //		} else {
+            //			commands_printf("Warning: Could not set appconf due to wrong signature");
+            //		}
+            //
+            //		mempools_free_appconf(appconf);
+            //#endif
+        } break;
+            
+        case COMM_GET_APPCONF:
+        case COMM_GET_APPCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
+            //		app_configuration *appconf = mempools_alloc_appconf();
+            //
+            //		if (packet_id == COMM_GET_APPCONF) {
+            //			*appconf = *app_get_configuration();
+            //		} else {
+            //			confgenerator_set_defaults_appconf(appconf);
+            //		}
+            //
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //		if (mc_interface_get_motor_thread() == 2) {
+            //			appconf->controller_id = utils_second_motor_id();
+            //		}
+            //#endif
+            //
+            //		commands_send_appconf(packet_id, appconf);
+            //
+            //		mempools_free_appconf(appconf);
+        } break;
+            
+        case COMM_SAMPLE_PRINT: { VESC_EMULATOR_NO_SUPPORT
+            //		uint16_t sample_len;
+            //		uint8_t decimation;
+            //		debug_sampling_mode mode;
+            //
+            //		int32_t ind = 0;
+            //		mode = data[ind++];
+            //		sample_len = buffer_get_uint16(data, &ind);
+            //		decimation = data[ind++];
+            //
+            //		bool raw = false;
+            //		if (len > (uint32_t)ind) {
+            //			raw = data[ind++];
+            //		}
+            //
+            //		mc_interface_sample_print_data(mode, sample_len, decimation, raw);
+        } break;
+            
+        case COMM_REBOOT: VESC_EMULATOR_NO_SUPPORT
+            //		conf_general_store_backup_data();
+            //		// Lock the system and enter an infinite loop. The watchdog will reboot.
+            //		__disable_irq();
+            //		for(;;){};
+            break;
+            
+        case COMM_ALIVE: VESC_EMULATOR_NO_SUPPORT
+            //		SHUTDOWN_RESET();
+            //		timeout_reset();
+            break;
+            
+        case COMM_GET_DECODED_PPM: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_GET_DECODED_PPM;
+            //		buffer_append_int32(send_buffer, (int32_t)(app_ppm_get_decoded_level() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(servodec_get_last_pulse_len(0) * 1000000.0), &ind);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_GET_DECODED_ADC: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_GET_DECODED_ADC;
+            //		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_decoded_level() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_decoded_level2() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_adc_get_voltage2() * 1000000.0), &ind);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_GET_DECODED_CHUK: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_GET_DECODED_CHUK;
+            //		buffer_append_int32(send_buffer, (int32_t)(app_nunchuk_get_decoded_chuk() * 1000000.0), &ind);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_GET_DECODED_BALANCE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_GET_DECODED_BALANCE;
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_pid_output() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_pitch_angle() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_roll_angle() * 1000000.0), &ind);
+            //		buffer_append_uint32(send_buffer, app_balance_get_diff_time(), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_motor_current() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_debug1() * 1000000.0), &ind);
+            //		buffer_append_uint16(send_buffer, app_balance_get_state(), &ind);
+            //		buffer_append_uint16(send_buffer, app_balance_get_switch_state(), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_adc1() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_adc2() * 1000000.0), &ind);
+            //		buffer_append_int32(send_buffer, (int32_t)(app_balance_get_debug2() * 1000000.0), &ind);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_FORWARD_CAN: { VESC_EMULATOR_NO_SUPPORT
+            //		send_func_can_fwd = reply_func;
+            //
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //		if (data[0] == utils_second_motor_id()) {
+            //			mc_interface_select_motor_thread(2);
+            //			commands_process_packet(data + 1, len - 1, reply_func);
+            //			mc_interface_select_motor_thread(1);
+            //		} else {
+            //			comm_can_send_buffer(data[0], data + 1, len - 1, 0);
+            //		}
+            //#else
+            //		comm_can_send_buffer(data[0], data + 1, len - 1, 0);
+            //#endif
+        } break;
+            
+        case COMM_SET_CHUCK_DATA: { VESC_EMULATOR_NO_SUPPORT
+            //		chuck_data chuck_d_tmp;
+            //
+            //		int32_t ind = 0;
+            //		chuck_d_tmp.js_x = data[ind++];
+            //		chuck_d_tmp.js_y = data[ind++];
+            //		chuck_d_tmp.bt_c = data[ind++];
+            //		chuck_d_tmp.bt_z = data[ind++];
+            //		chuck_d_tmp.acc_x = buffer_get_int16(data, &ind);
+            //		chuck_d_tmp.acc_y = buffer_get_int16(data, &ind);
+            //		chuck_d_tmp.acc_z = buffer_get_int16(data, &ind);
+            //
+            //		if (len >= (unsigned int)ind + 2) {
+            //			chuck_d_tmp.rev_has_state = data[ind++];
+            //			chuck_d_tmp.is_rev = data[ind++];
+            //		} else {
+            //			chuck_d_tmp.rev_has_state = false;
+            //			chuck_d_tmp.is_rev = false;
+            //		}
+            //		app_nunchuk_update_output(&chuck_d_tmp);
+        } break;
+            //
+        case COMM_CUSTOM_APP_DATA: VESC_EMULATOR_NO_SUPPORT
+            //            		if (appdata_func) {
+            //            			appdata_func(data, len);
+            //            		}
+            //            		break;
+            //
+            //            	case COMM_CUSTOM_HW_DATA:
+            //            		if (hwdata_func) {
+            //            			hwdata_func(data, len);
+            //            		}
+            break;
+            
+        case COMM_NRF_START_PAIRING: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		nrf_driver_start_pairing(buffer_get_int32(data, &ind));
+            //
+            //		ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = packet_id;
+            //		send_buffer[ind++] = NRF_PAIR_STARTED;
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_GPD_SET_FSW: { VESC_EMULATOR_NO_SUPPORT
+            //		timeout_reset();
+            //		int32_t ind = 0;
+            //		gpdrive_set_switching_frequency((float)buffer_get_int32(data, &ind));
+        } break;
+            
+        case COMM_GPD_BUFFER_SIZE_LEFT: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_GPD_BUFFER_SIZE_LEFT;
+            //		buffer_append_int32(send_buffer, gpdrive_buffer_size_left(), &ind);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_GPD_FILL_BUFFER: { VESC_EMULATOR_NO_SUPPORT
+            //		timeout_reset();
+            //		int32_t ind = 0;
+            //		while (ind < (int)len) {
+            //			gpdrive_add_buffer_sample(buffer_get_float32_auto(data, &ind));
+            //		}
+        } break;
+            
+        case COMM_GPD_OUTPUT_SAMPLE: { VESC_EMULATOR_NO_SUPPORT
+            //		timeout_reset();
+            //		int32_t ind = 0;
+            //		gpdrive_output_sample(buffer_get_float32_auto(data, &ind));
+        } break;
+            
+        case COMM_GPD_SET_MODE: { VESC_EMULATOR_NO_SUPPORT
+            //		timeout_reset();
+            //		int32_t ind = 0;
+            //		gpdrive_set_mode(data[ind++]);
+        } break;
+            
+        case COMM_GPD_FILL_BUFFER_INT8: { VESC_EMULATOR_NO_SUPPORT
+            //		timeout_reset();
+            //		int32_t ind = 0;
+            //		while (ind < (int)len) {
+            //			gpdrive_add_buffer_sample_int((int8_t)data[ind++]);
+            //		}
+        } break;
+            
+        case COMM_GPD_FILL_BUFFER_INT16: { VESC_EMULATOR_NO_SUPPORT
+            //		timeout_reset();
+            //		int32_t ind = 0;
+            //		while (ind < (int)len) {
+            //			gpdrive_add_buffer_sample_int(buffer_get_int16(data, &ind));
+            //		}
+        } break;
+            
+        case COMM_GPD_SET_BUFFER_INT_SCALE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		gpdrive_set_buffer_int_scale(buffer_get_float32_auto(data, &ind));
+        } break;
+            
+        case COMM_GET_VALUES_SETUP:
+        case COMM_GET_VALUES_SETUP_SELECTIVE: { VESC_EMULATOR_NO_SUPPORT
+            //		setup_values val = mc_interface_get_setup_values();
+            //
+            //		float wh_batt_left = 0.0;
+            //		float battery_level = mc_interface_get_battery_level(&wh_batt_left);
+            //
+            //		int32_t ind = 0;
+            //		chMtxLock(&send_buffer_mutex);
+            //		uint8_t *send_buffer = send_buffer_global;
+            //		send_buffer[ind++] = packet_id;
+            //
+            //		uint32_t mask = 0xFFFFFFFF;
+            //		if (packet_id == COMM_GET_VALUES_SETUP_SELECTIVE) {
+            //			int32_t ind2 = 0;
+            //			mask = buffer_get_uint32(data, &ind2);
+            //			buffer_append_uint32(send_buffer, mask, &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 0)) {
+            //			buffer_append_float16(send_buffer, mc_interface_temp_fet_filtered(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 1)) {
+            //			buffer_append_float16(send_buffer, mc_interface_temp_motor_filtered(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 2)) {
+            //			buffer_append_float32(send_buffer, val.current_tot, 1e2, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 3)) {
+            //			buffer_append_float32(send_buffer, val.current_in_tot, 1e2, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 4)) {
+            //			buffer_append_float16(send_buffer, mc_interface_get_duty_cycle_now(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 5)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_rpm(), 1e0, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 6)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_speed(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 7)) {
+            //			buffer_append_float16(send_buffer, mc_interface_get_input_voltage_filtered(), 1e1, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 8)) {
+            //			buffer_append_float16(send_buffer, battery_level, 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 9)) {
+            //			buffer_append_float32(send_buffer, val.ah_tot, 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 10)) {
+            //			buffer_append_float32(send_buffer, val.ah_charge_tot, 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 11)) {
+            //			buffer_append_float32(send_buffer, val.wh_tot, 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 12)) {
+            //			buffer_append_float32(send_buffer, val.wh_charge_tot, 1e4, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 13)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_distance(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 14)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_distance_abs(), 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 15)) {
+            //			buffer_append_float32(send_buffer, mc_interface_get_pid_pos_now(), 1e6, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 16)) {
+            //			send_buffer[ind++] = mc_interface_get_fault();
+            //		}
+            //		if (mask & ((uint32_t)1 << 17)) {
+            //			uint8_t current_controller_id = app_get_configuration()->controller_id;
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //			if (mc_interface_get_motor_thread() == 2) {
+            //				current_controller_id = utils_second_motor_id();
+            //			}
+            //#endif
+            //			send_buffer[ind++] = current_controller_id;
+            //		}
+            //		if (mask & ((uint32_t)1 << 18)) {
+            //			send_buffer[ind++] = val.num_vescs;
+            //		}
+            //		if (mask & ((uint32_t)1 << 19)) {
+            //			buffer_append_float32(send_buffer, wh_batt_left, 1e3, &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 20)) {
+            //			buffer_append_uint32(send_buffer, mc_interface_get_odometer(), &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 21)) {
+            //			buffer_append_uint32(send_buffer, chVTGetSystemTimeX() / (CH_CFG_ST_FREQUENCY / 1000), &ind);
+            //		}
+            //
+            //		reply_func(send_buffer, ind);
+            //		chMtxUnlock(&send_buffer_mutex);
+        } break;
+            
+        case COMM_SET_ODOMETER: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_odometer(buffer_get_uint32(data, &ind));
+            //		timeout_reset();
+        } break;
+            
+        case COMM_SET_MCCONF_TEMP:
+        case COMM_SET_MCCONF_TEMP_SETUP: { VESC_EMULATOR_NO_SUPPORT
+            //		mc_configuration *mcconf = mempools_alloc_mcconf();
+            //		*mcconf = *mc_interface_get_configuration();
+            //
+            //		int32_t ind = 0;
+            //		bool store = data[ind++];
+            //		bool forward_can = data[ind++];
+            //		bool ack = data[ind++];
+            //		bool divide_by_controllers = data[ind++];
+            //
+            //		float controller_num = 1.0;
+            //
+            //		if (divide_by_controllers) {
+            //			for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
+            //				can_status_msg *msg = comm_can_get_status_msg_index(i);
+            //				if (msg->id >= 0 && UTILS_AGE_S(msg->rx_time) < 0.1) {
+            //					controller_num += 1.0;
+            //				}
+            //			}
+            //		}
+            //
+            //		mcconf->l_current_min_scale = buffer_get_float32_auto(data, &ind);
+            //		mcconf->l_current_max_scale = buffer_get_float32_auto(data, &ind);
+            //
+            //		if (packet_id == COMM_SET_MCCONF_TEMP_SETUP) {
+            //			const float fact = ((mcconf->si_motor_poles / 2.0) * 60.0 *
+            //					mcconf->si_gear_ratio) / (mcconf->si_wheel_diameter * M_PI);
+            //
+            //			mcconf->l_min_erpm = buffer_get_float32_auto(data, &ind) * fact;
+            //			mcconf->l_max_erpm = buffer_get_float32_auto(data, &ind) * fact;
+            //
+            //			// Write computed RPM back and change forwarded packet id to
+            //			// COMM_SET_MCCONF_TEMP. This way only the master has to be
+            //			// aware of the setup information.
+            //			ind -= 8;
+            //			buffer_append_float32_auto(data, mcconf->l_min_erpm, &ind);
+            //			buffer_append_float32_auto(data, mcconf->l_max_erpm, &ind);
+            //		} else {
+            //			mcconf->l_min_erpm = buffer_get_float32_auto(data, &ind);
+            //			mcconf->l_max_erpm = buffer_get_float32_auto(data, &ind);
+            //		}
+            //
+            //		mcconf->l_min_duty = buffer_get_float32_auto(data, &ind);
+            //		mcconf->l_max_duty = buffer_get_float32_auto(data, &ind);
+            //		mcconf->l_watt_min = buffer_get_float32_auto(data, &ind) / controller_num;
+            //		mcconf->l_watt_max = buffer_get_float32_auto(data, &ind) / controller_num;
+            //
+            //		// Write divided data back to the buffer, as the other controllers have no way to tell
+            //		// how many controllers are on the bus and thus need pre-divided data.
+            //		// We set divide by controllers to false before forwarding.
+            //		ind -= 8;
+            //		buffer_append_float32_auto(data, mcconf->l_watt_min, &ind);
+            //		buffer_append_float32_auto(data, mcconf->l_watt_max, &ind);
+            //
+            //		// Battery limits can be set optionally in a backwards-compatible way.
+            //		if ((int32_t)len >= (ind + 8)) {
+            //			mcconf->l_in_current_min = buffer_get_float32_auto(data, &ind);
+            //			mcconf->l_in_current_max = buffer_get_float32_auto(data, &ind);
+            //		}
+            //
+            //		mcconf->lo_current_min = mcconf->l_current_min * mcconf->l_current_min_scale;
+            //		mcconf->lo_current_max = mcconf->l_current_max * mcconf->l_current_max_scale;
+            //		mcconf->lo_current_motor_min_now = mcconf->lo_current_min;
+            //		mcconf->lo_current_motor_max_now = mcconf->lo_current_max;
+            //		mcconf->lo_in_current_min = mcconf->l_in_current_min;
+            //		mcconf->lo_in_current_max = mcconf->l_in_current_max;
+            //
+            //		commands_apply_mcconf_hw_limits(mcconf);
+            //
+            //		if (store) {
+            //			conf_general_store_mc_configuration(mcconf, mc_interface_get_motor_thread() == 2);
+            //		}
+            //
+            //		mc_interface_set_configuration(mcconf);
+            //
+            //		if (forward_can) {
+            //			data[-1] = COMM_SET_MCCONF_TEMP;
+            //			data[1] = 0; // No more forward
+            //			data[2] = 0; // No ack
+            //			data[3] = 0; // No dividing, see comment above
+            //
+            //			// TODO: Maybe broadcast on CAN-bus?
+            //			for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
+            //				can_status_msg *msg = comm_can_get_status_msg_index(i);
+            //				if (msg->id >= 0 && UTILS_AGE_S(msg->rx_time) < 0.1) {
+            //					comm_can_send_buffer(msg->id, data - 1, len + 1, 0);
+            //				}
+            //			}
+            //		}
+            //
+            //		if (ack) {
+            //			ind = 0;
+            //			uint8_t send_buffer[50];
+            //			send_buffer[ind++] = packet_id;
+            //			reply_func(send_buffer, ind);
+            //		}
+            //
+            //		mempools_free_mcconf(mcconf);
+        } break;
+            
+        case COMM_GET_MCCONF_TEMP: { VESC_EMULATOR_NO_SUPPORT
+            //		mc_configuration *mcconf = mempools_alloc_mcconf();
+            //		*mcconf = *mc_interface_get_configuration();
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[60];
+            //
+            //		send_buffer[ind++] = packet_id;
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_current_min_scale, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_current_max_scale, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_min_erpm, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_max_erpm, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_min_duty, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_max_duty, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_watt_min, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_watt_max, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_in_current_min, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->l_in_current_max, &ind);
+            //		// Setup config needed for speed calculation
+            //		send_buffer[ind++] = (uint8_t)mcconf->si_motor_poles;
+            //		buffer_append_float32_auto(send_buffer, mcconf->si_gear_ratio, &ind);
+            //		buffer_append_float32_auto(send_buffer, mcconf->si_wheel_diameter, &ind);
+            //
+            //		mempools_free_mcconf(mcconf);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_EXT_NRF_PRESENT: { VESC_EMULATOR_NO_SUPPORT
+            //		if (!conf_general_permanent_nrf_found) {
+            //			nrf_driver_init_ext_nrf();
+            //			if (!nrf_driver_is_pairing()) {
+            //				const app_configuration *appconf = app_get_configuration();
+            //				uint8_t send_buffer[50];
+            //				send_buffer[0] = COMM_EXT_NRF_ESB_SET_CH_ADDR;
+            //				send_buffer[1] = appconf->app_nrf_conf.channel;
+            //				send_buffer[2] = appconf->app_nrf_conf.address[0];
+            //				send_buffer[3] = appconf->app_nrf_conf.address[1];
+            //				send_buffer[4] = appconf->app_nrf_conf.address[2];
+            //				commands_send_packet_nrf(send_buffer, 5);
+            //			}
+            //		}
+        } break;
+            
+        case COMM_EXT_NRF_ESB_RX_DATA: { VESC_EMULATOR_NO_SUPPORT
+            //		if (len > 2) {
+            //			unsigned short crc = crc16((unsigned char*)data, len - 2);
+            //
+            //			if (crc	== ((unsigned short) data[len - 2] << 8 |
+            //					(unsigned short) data[len - 1])) {
+            //				nrf_driver_process_packet(data, len);
+            //			}
+            //		}
+        } break;
+            
+        case COMM_APP_DISABLE_OUTPUT: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		bool fwd_can = data[ind++];
+            //		int time = buffer_get_int32(data, &ind);
+            //		app_disable_output(time);
+            //
+            //		if (fwd_can) {
+            //			data[0] = 0; // Don't continue forwarding
+            //			comm_can_send_buffer(255, data - 1, len + 1, 0);
+            //		}
+        } break;
+            
+        case COMM_TERMINAL_CMD_SYNC: VESC_EMULATOR_NO_SUPPORT
+            //		data[len] = '\0';
+            //		chMtxLock(&terminal_mutex);
+            //		terminal_process_string((char*)data);
+            //		chMtxUnlock(&terminal_mutex);
+            break;
+            
+        case COMM_GET_IMU_DATA: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[70];
+            //		send_buffer[ind++] = packet_id;
+            //
+            //		int32_t ind2 = 0;
+            //		uint32_t mask = buffer_get_uint16(data, &ind2);
+            //
+            //		float rpy[3], acc[3], gyro[3], mag[3], q[4];
+            //		imu_get_rpy(rpy);
+            //		imu_get_accel(acc);
+            //		imu_get_gyro(gyro);
+            //		imu_get_mag(mag);
+            //		imu_get_quaternions(q);
+            //
+            //		buffer_append_uint16(send_buffer, mask, &ind);
+            //
+            //		if (mask & ((uint32_t)1 << 0)) {
+            //			buffer_append_float32_auto(send_buffer, rpy[0], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 1)) {
+            //			buffer_append_float32_auto(send_buffer, rpy[1], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 2)) {
+            //			buffer_append_float32_auto(send_buffer, rpy[2], &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 3)) {
+            //			buffer_append_float32_auto(send_buffer, acc[0], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 4)) {
+            //			buffer_append_float32_auto(send_buffer, acc[1], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 5)) {
+            //			buffer_append_float32_auto(send_buffer, acc[2], &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 6)) {
+            //			buffer_append_float32_auto(send_buffer, gyro[0], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 7)) {
+            //			buffer_append_float32_auto(send_buffer, gyro[1], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 8)) {
+            //			buffer_append_float32_auto(send_buffer, gyro[2], &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 9)) {
+            //			buffer_append_float32_auto(send_buffer, mag[0], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 10)) {
+            //			buffer_append_float32_auto(send_buffer, mag[1], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 11)) {
+            //			buffer_append_float32_auto(send_buffer, mag[2], &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 12)) {
+            //			buffer_append_float32_auto(send_buffer, q[0], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 13)) {
+            //			buffer_append_float32_auto(send_buffer, q[1], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 14)) {
+            //			buffer_append_float32_auto(send_buffer, q[2], &ind);
+            //		}
+            //		if (mask & ((uint32_t)1 << 15)) {
+            //			buffer_append_float32_auto(send_buffer, q[3], &ind);
+            //		}
+            //
+            //		if (mask & ((uint32_t)1 << 16)) {
+            //			uint8_t current_controller_id = app_get_configuration()->controller_id;
+            //#ifdef HW_HAS_DUAL_MOTORS
+            //			if (mc_interface_get_motor_thread() == 2) {
+            //				current_controller_id = utils_second_motor_id();
+            //			}
+            //#endif
+            //			send_buffer[ind++] = current_controller_id;
+            //		}
+            //
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_ERASE_BOOTLOADER_ALL_CAN: VESC_EMULATOR_NO_SUPPORT
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(6000);
+            //		}
+            //
+            //		data[-1] = COMM_ERASE_BOOTLOADER;
+            //		comm_can_send_buffer(255, data - 1, len + 1, 2);
+            //		chThdSleepMilliseconds(1500);
+            /* Falls through. */
+            /* no break */
+        case COMM_ERASE_BOOTLOADER: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(6000);
+            //		}
+            //		uint16_t flash_res = flash_helper_erase_bootloader();
+            //
+            //		ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_ERASE_BOOTLOADER;
+            //		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_SET_CURRENT_REL: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		mc_interface_set_current_rel(buffer_get_float32(data, 1e5, &ind));
+            //		timeout_reset();
+        } break;
+            
+        case COMM_CAN_FWD_FRAME: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint32_t id = buffer_get_uint32(data, &ind);
+            //		bool is_ext = data[ind++];
+            //
+            //		if (is_ext) {
+            //			comm_can_transmit_eid(id, data + ind, len - ind);
+            //		} else {
+            //			comm_can_transmit_sid(id, data + ind, len - ind);
+            //		}
+        } break;
+            
+        case COMM_SET_BATTERY_CUT: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		float start = buffer_get_float32(data, 1e3, &ind);
+            //		float end = buffer_get_float32(data, 1e3, &ind);
+            //		bool store = data[ind++];
+            //		bool fwd_can = data[ind++];
+            //
+            //		if (fwd_can) {
+            //			comm_can_conf_battery_cut(255, store, start, end);
+            //		}
+            //
+            //		mc_configuration *mcconf = mempools_alloc_mcconf();
+            //		*mcconf = *mc_interface_get_configuration();
+            //
+            //		if (mcconf->l_battery_cut_start != start || mcconf->l_battery_cut_end != end) {
+            //			mcconf->l_battery_cut_start = start;
+            //			mcconf->l_battery_cut_end = end;
+            //
+            //			if (store) {
+            //				conf_general_store_mc_configuration(mcconf,
+            //						mc_interface_get_motor_thread() == 2);
+            //			}
+            //
+            //			mc_interface_set_configuration(mcconf);
+            //		}
+            //
+            //		mempools_free_mcconf(mcconf);
+            //
+            //		// Send ack
+            //		ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = packet_id;
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_GET_BATTERY_CUT: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint8_t send_buffer[60];
+            //		volatile const mc_configuration *mcconf = mc_interface_get_configuration();
+            //
+            //		send_buffer[ind++] = packet_id;
+            //		buffer_append_float32(send_buffer, mcconf->l_battery_cut_start, 1e3, &ind);
+            //		buffer_append_float32(send_buffer, mcconf->l_battery_cut_end, 1e3, &ind);
+            //
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_SET_CAN_MODE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		bool store = data[ind++];
+            //		bool ack = data[ind++];
+            //		int mode = data[ind++];
+            //
+            //		app_configuration *appconf = mempools_alloc_appconf();
+            //		*appconf = *app_get_configuration();
+            //		appconf->can_mode = mode;
+            //
+            //		if (store) {
+            //			conf_general_store_app_configuration(appconf);
+            //		}
+            //
+            //		app_set_configuration(appconf);
+            //
+            //		mempools_free_appconf(appconf);
+            //
+            //		if (ack) {
+            //			ind = 0;
+            //			uint8_t send_buffer[50];
+            //			send_buffer[ind++] = packet_id;
+            //			reply_func(send_buffer, ind);
+            //		}
+        } break;
+            
+        case COMM_BMS_GET_VALUES:
+        case COMM_BMS_SET_CHARGE_ALLOWED:
+        case COMM_BMS_SET_BALANCE_OVERRIDE:
+        case COMM_BMS_RESET_COUNTERS:
+        case COMM_BMS_FORCE_BALANCE:
+        case COMM_BMS_ZERO_CURRENT_OFFSET: { VESC_EMULATOR_NO_SUPPORT
+            //		bms_process_cmd(data - 1, len + 1, reply_func);
+            break;
+        }
+            
+            // Power switch
+        case COMM_PSW_GET_STATUS: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		bool by_id = data[ind++];
+            //		int id_ind = buffer_get_int16(data, &ind);
+            //
+            //		int psws_num = 0;
+            //		for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
+            //			psw_status *stat = comm_can_get_psw_status_index(i);
+            //			if (stat->id >= 0) {
+            //				psws_num++;
+            //			} else {
+            //				break;
+            //			}
+            //		}
+            //
+            //		psw_status *stat = 0;
+            //		if (by_id) {
+            //			stat = comm_can_get_psw_status_id(id_ind);
+            //		} else if (id_ind < psws_num) {
+            //			stat = comm_can_get_psw_status_index(id_ind);
+            //		}
+            //
+            //		if (stat) {
+            //			ind = 0;
+            //			uint8_t send_buffer[70];
+            //
+            //			send_buffer[ind++] = packet_id;
+            //			buffer_append_int16(send_buffer, stat->id, &ind);
+            //			buffer_append_int16(send_buffer, psws_num, &ind);
+            //			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(stat->rx_time), &ind);
+            //			buffer_append_float32_auto(send_buffer, stat->v_in, &ind);
+            //			buffer_append_float32_auto(send_buffer, stat->v_out, &ind);
+            //			buffer_append_float32_auto(send_buffer, stat->temp, &ind);
+            //			send_buffer[ind++] = stat->is_out_on;
+            //			send_buffer[ind++] = stat->is_pch_on;
+            //			send_buffer[ind++] = stat->is_dsc_on;
+            //
+            //			reply_func(send_buffer, ind);
+            //		}
+            //	} break;
+            //
+            //	case COMM_PSW_SWITCH: {
+            //		int32_t ind = 0;
+            //		int id = buffer_get_int16(data, &ind);
+            //		bool is_on = data[ind++];
+            //		bool plot = data[ind++];
+            //		comm_can_psw_switch(id, is_on, plot);
+        } break;
+            
+        case COMM_GET_QML_UI_HW: { VESC_EMULATOR_NO_SUPPORT
+            //#ifdef QMLUI_SOURCE_HW
+            //		int32_t ind = 0;
+            //
+            //		int32_t len_qml = buffer_get_int32(data, &ind);
+            //		int32_t ofs_qml = buffer_get_int32(data, &ind);
+            //
+            //		if ((len_qml + ofs_qml) > DATA_QML_HW_SIZE || len_qml > (PACKET_MAX_PL_LEN - 10)) {
+            //			break;
+            //		}
+            //
+            //		chMtxLock(&send_buffer_mutex);
+            //		ind = 0;
+            //		send_buffer_global[ind++] = packet_id;
+            //		buffer_append_int32(send_buffer_global, DATA_QML_HW_SIZE, &ind);
+            //		buffer_append_int32(send_buffer_global, ofs_qml, &ind);
+            //		memcpy(send_buffer_global + ind, data_qml_hw + ofs_qml, len_qml);
+            //		ind += len_qml;
+            //		reply_func(send_buffer_global, ind);
+            //
+            //		chMtxUnlock(&send_buffer_mutex);
+            //#endif
+        } break;
+            
+        case COMM_GET_QML_UI_APP: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //
+            //		int32_t len_qml = buffer_get_int32(data, &ind);
+            //		int32_t ofs_qml = buffer_get_int32(data, &ind);
+            //
+            //		uint8_t *qmlui_data = flash_helper_qmlui_data();
+            //		int32_t qmlui_len = flash_helper_qmlui_size();
+            //
+            //#ifdef QMLUI_SOURCE_APP
+            //		qmlui_data = data_qml_app;
+            //		qmlui_len = DATA_QML_APP_SIZE;
+            //#endif
+            //
+            //		if (!qmlui_data) {
+            //			break;
+            //		}
+            //
+            //		if ((len_qml + ofs_qml) > qmlui_len || len_qml > (PACKET_MAX_PL_LEN - 10)) {
+            //			break;
+            //		}
+            //
+            //		chMtxLock(&send_buffer_mutex);
+            //		ind = 0;
+            //		send_buffer_global[ind++] = packet_id;
+            //		buffer_append_int32(send_buffer_global, qmlui_len, &ind);
+            //		buffer_append_int32(send_buffer_global, ofs_qml, &ind);
+            //		memcpy(send_buffer_global + ind, qmlui_data + ofs_qml, len_qml);
+            //		ind += len_qml;
+            //		reply_func(send_buffer_global, ind);
+            //
+            //		chMtxUnlock(&send_buffer_mutex);
+        } break;
+            
+        case COMM_QMLUI_ERASE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(6000);
+            //		}
+            //		uint16_t flash_res = flash_helper_erase_qmlui();
+            //
+            //		ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_QMLUI_ERASE;
+            //		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_QMLUI_WRITE: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint32_t qmlui_offset = buffer_get_uint32(data, &ind);
+            //
+            //		if (nrf_driver_ext_nrf_running()) {
+            //			nrf_driver_pause(2000);
+            //		}
+            //		uint16_t flash_res = flash_helper_write_qmlui(qmlui_offset, data + ind, len - ind);
+            //
+            //		SHUTDOWN_RESET();
+            //
+            //		ind = 0;
+            //		uint8_t send_buffer[50];
+            //		send_buffer[ind++] = COMM_QMLUI_WRITE;
+            //		send_buffer[ind++] = flash_res == FLASH_COMPLETE ? 1 : 0;
+            //		buffer_append_uint32(send_buffer, qmlui_offset, &ind);
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_IO_BOARD_GET_ALL: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		int id = buffer_get_int16(data, &ind);
+            //
+            //		io_board_adc_values *adc_1_4 = comm_can_get_io_board_adc_1_4_id(id);
+            //		io_board_adc_values *adc_5_8 = comm_can_get_io_board_adc_5_8_id(id);
+            //		io_board_digial_inputs *digital_in = comm_can_get_io_board_digital_in_id(id);
+            //
+            //		if (!adc_1_4 && !adc_5_8 && !digital_in) {
+            //			break;
+            //		}
+            //
+            //		uint8_t send_buffer[70];
+            //		ind = 0;
+            //		send_buffer[ind++] = packet_id;
+            //		buffer_append_int16(send_buffer, id, &ind);
+            //
+            //		if (adc_1_4) {
+            //			send_buffer[ind++] = 1;
+            //			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(adc_1_4->rx_time), &ind);
+            //			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[0], 1e2, &ind);
+            //			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[1], 1e2, &ind);
+            //			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[2], 1e2, &ind);
+            //			buffer_append_float16(send_buffer, adc_1_4->adc_voltages[3], 1e2, &ind);
+            //		}
+            //
+            //		if (adc_5_8) {
+            //			send_buffer[ind++] = 2;
+            //			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(adc_1_4->rx_time), &ind);
+            //			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[0], 1e2, &ind);
+            //			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[1], 1e2, &ind);
+            //			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[2], 1e2, &ind);
+            //			buffer_append_float16(send_buffer, adc_5_8->adc_voltages[3], 1e2, &ind);
+            //		}
+            //
+            //		if (digital_in) {
+            //			send_buffer[ind++] = 3;
+            //			buffer_append_float32_auto(send_buffer, UTILS_AGE_S(adc_1_4->rx_time), &ind);
+            //			buffer_append_uint32(send_buffer, (digital_in->inputs >> 32) & 0xFFFFFFFF, &ind);
+            //			buffer_append_uint32(send_buffer, (digital_in->inputs >> 0) & 0xFFFFFFFF, &ind);
+            //		}
+            //
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_IO_BOARD_SET_PWM: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		int id = buffer_get_int16(data, &ind);
+            //		int channel = buffer_get_int16(data, &ind);
+            //		float duty = buffer_get_float32_auto(data, &ind);
+            //		comm_can_io_board_set_output_pwm(id, channel, duty);
+        } break;
+            
+        case COMM_IO_BOARD_SET_DIGITAL: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		int id = buffer_get_int16(data, &ind);
+            //		int channel = buffer_get_int16(data, &ind);
+            //		bool on = data[ind++];
+            //		comm_can_io_board_set_output_digital(id, channel, on);
+        } break;
+            
+        case COMM_GET_STATS: { VESC_EMULATOR_NO_SUPPORT
+            //		int32_t ind = 0;
+            //		uint32_t mask = buffer_get_uint16(data, &ind);
+            //
+            //		ind = 0;
+            //		uint8_t send_buffer[60];
+            //		send_buffer[ind++] = packet_id;
+            //		buffer_append_uint32(send_buffer, mask, &ind);
+            //
+            //		if (mask & ((uint32_t)1 << 0)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_speed_avg(), &ind); }
+            //		if (mask & ((uint32_t)1 << 1)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_speed_max(), &ind); }
+            //		if (mask & ((uint32_t)1 << 2)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_power_avg(), &ind); }
+            //		if (mask & ((uint32_t)1 << 3)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_power_max(), &ind); }
+            //		if (mask & ((uint32_t)1 << 4)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_current_avg(), &ind); }
+            //		if (mask & ((uint32_t)1 << 5)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_current_max(), &ind); }
+            //		if (mask & ((uint32_t)1 << 6)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_mosfet_avg(), &ind); }
+            //		if (mask & ((uint32_t)1 << 7)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_mosfet_max(), &ind); }
+            //		if (mask & ((uint32_t)1 << 8)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_motor_avg(), &ind); }
+            //		if (mask & ((uint32_t)1 << 9)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_temp_motor_max(), &ind); }
+            //		if (mask & ((uint32_t)1 << 10)) { buffer_append_float32_auto(send_buffer, mc_interface_stat_count_time(), &ind); }
+            //
+            //		reply_func(send_buffer, ind);
+        } break;
+            
+        case COMM_RESET_STATS: { VESC_EMULATOR_NO_SUPPORT
+            //		bool ack = false;
+            //
+            //		if (len > 0) {
+            //			ack = data[0];
+            //		}
+            //
+            //		mc_interface_stat_reset();
+            //
+            //		if (ack) {
+            //			int32_t ind = 0;
+            //			uint8_t send_buffer[50];
+            //			send_buffer[ind++] = packet_id;
+            //			reply_func(send_buffer, ind);
+            //		}
+        } break;
+            
+            // Blocking commands. Only one of them runs at any given time, in their
+            // own thread. If other blocking commands come before the previous one has
+            // finished, they are discarded.
+        case COMM_TERMINAL_CMD:
+        case COMM_DETECT_MOTOR_PARAM:
+        case COMM_DETECT_MOTOR_R_L:
+        case COMM_DETECT_MOTOR_FLUX_LINKAGE:
+        case COMM_DETECT_ENCODER:
+        case COMM_DETECT_HALL_FOC:
+        case COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP:
+        case COMM_DETECT_APPLY_ALL_FOC:
+        case COMM_PING_CAN:
+        case COMM_BM_CONNECT:
+        case COMM_BM_ERASE_FLASH_ALL:
+        case COMM_BM_WRITE_FLASH_LZO:
+        case COMM_BM_WRITE_FLASH:
+        case COMM_BM_REBOOT:
+        case COMM_BM_DISCONNECT:
+        case COMM_BM_MAP_PINS_DEFAULT:
+        case COMM_BM_MAP_PINS_NRF5X:
+        case COMM_BM_MEM_READ:
+        case COMM_GET_IMU_CALIBRATION:
+        case COMM_BM_MEM_WRITE: VESC_EMULATOR_NO_SUPPORT
+            //		if (!is_blocking) {
+            //			memcpy(blocking_thread_cmd_buffer, data - 1, len + 1);
+            //			blocking_thread_cmd_len = len + 1;
+            //			is_blocking = true;
+            //			blocking_thread_motor = mc_interface_get_motor_thread();
+            //			send_func_blocking = reply_func;
+            //			chEvtSignal(blocking_tp, (eventmask_t)1);
+            //		}
+            break;
+            
+        default:
+            break;
+    }
 }
 
 void commands_printf(const char* format, ...) {

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "packet.h"
 #include "string.h"
+#include "vesc_interface.h"
 
 #define HW_NAME #define HW_NAME "RADIUS"
 

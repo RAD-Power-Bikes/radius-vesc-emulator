@@ -35,7 +35,6 @@
 		788D952E2ADD780A00EDB8C7 /* commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = commands.h; sourceTree = "<group>"; };
 		788D952F2ADD780A00EDB8C7 /* crc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc.h; sourceTree = "<group>"; };
 		788D95322ADD7B1300EDB8C7 /* vesc_interface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vesc_interface.h; sourceTree = "<group>"; };
-		788D95332ADD829900EDB8C7 /* applications */ = {isa = PBXFileReference; lastKnownFileType = folder; path = applications; sourceTree = "<group>"; };
 		788D95342ADD84D700EDB8C7 /* packet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = packet.h; sourceTree = "<group>"; };
 		788D95352ADD84D700EDB8C7 /* packet.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = packet.c; sourceTree = "<group>"; };
 		788D95372ADD88F000EDB8C7 /* vesc_interface.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = vesc_interface.c; sourceTree = "<group>"; };
@@ -73,7 +72,6 @@
 			children = (
 				788D95352ADD84D700EDB8C7 /* packet.c */,
 				788D95342ADD84D700EDB8C7 /* packet.h */,
-				788D95332ADD829900EDB8C7 /* applications */,
 				788A1CB02ADC5DD800CE6CB9 /* main.c */,
 				788D952C2ADD780A00EDB8C7 /* commands.c */,
 				788D952E2ADD780A00EDB8C7 /* commands.h */,
@@ -266,6 +264,7 @@
 		788A1CB52ADC5DD800CE6CB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
