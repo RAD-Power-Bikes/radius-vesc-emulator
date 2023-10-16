@@ -18,37 +18,38 @@
  */
 
 #include "commands.h"
-#include "ch.h"
-#include "hal.h"
-#include "mc_interface.h"
-#include "stm32f4xx_conf.h"
-#include "servo_simple.h"
+#include "vesc_interface.h"
+//#include "ch.h"
+//#include "hal.h"
+//#include "mc_interface.h"
+//#include "stm32f4xx_conf.h"
+//#include "servo_simple.h"
 #include "buffer.h"
-#include "terminal.h"
-#include "hw.h"
-#include "mcpwm.h"
-#include "mcpwm_foc.h"
-#include "mc_interface.h"
-#include "app.h"
+//#include "terminal.h"
+//#include "hw.h"
+//#include "mcpwm.h"
+//#include "mcpwm_foc.h"
+//#include "mc_interface.h"
+//#include "applications/app.h"
 #include "timeout.h"
-#include "servo_dec.h"
-#include "comm_can.h"
-#include "flash_helper.h"
-#include "utils.h"
+//#include "servo_dec.h"
+//#include "comm_can.h"
+//#include "flash_helper.h"
+//#include "utils.h"
 #include "packet.h"
-#include "encoder.h"
-#include "nrf_driver.h"
-#include "gpdrive.h"
-#include "confgenerator.h"
-#include "imu.h"
-#include "shutdown.h"
-#if HAS_BLACKMAGIC
-#include "bm_if.h"
-#endif
-#include "minilzo.h"
-#include "mempools.h"
-#include "bms.h"
-#include "qmlui.h"
+//#include "encoder.h"
+//#include "nrf_driver.h"
+//#include "gpdrive.h"
+//#include "confgenerator.h"
+//#include "imu.h"
+//#include "shutdown.h"
+//#if HAS_BLACKMAGIC
+//#include "bm_if.h"
+//#endif
+//#include "minilzo.h"
+//#include "mempools.h"
+//#include "bms.h"
+//#include "qmlui.h"
 #include "crc.h"
 
 #include <math.h>
@@ -57,13 +58,13 @@
 #include <stdio.h>
 
 // Threads
-static THD_FUNCTION(blocking_thread, arg);
-#ifdef USE_LISPBM
-static THD_WORKING_AREA(blocking_thread_wa, 6000);
-#else
-static THD_WORKING_AREA(blocking_thread_wa, 2048);
-#endif
-static thread_t *blocking_tp;
+//static THD_FUNCTION(blocking_thread, arg);
+//#ifdef USE_LISPBM
+//static THD_WORKING_AREA(blocking_thread_wa, 6000);
+//#else
+//static THD_WORKING_AREA(blocking_thread_wa, 2048);
+//#endif
+//static thread_t *blocking_tp;
 
 // Private variables
 static uint8_t send_buffer_global[PACKET_MAX_PL_LEN];
@@ -78,19 +79,19 @@ static void(* volatile send_func_can_fwd)(unsigned char *data, unsigned int len)
 static void(* volatile appdata_func)(unsigned char *data, unsigned int len) = 0;
 static void(* volatile hwdata_func)(unsigned char *data, unsigned int len) = 0;
 static disp_pos_mode display_position_mode;
-static mutex_t print_mutex;
-static mutex_t send_buffer_mutex;
-static mutex_t terminal_mutex;
+//static mutex_t print_mutex;
+//static mutex_t send_buffer_mutex;
+//static mutex_t terminal_mutex;
 static volatile int fw_version_sent_cnt = 0;
 static bool isInitialized = false;
 
-void commands_init(void) {
-	chMtxObjectInit(&print_mutex);
-	chMtxObjectInit(&send_buffer_mutex);
-	chMtxObjectInit(&terminal_mutex);
-	chThdCreateStatic(blocking_thread_wa, sizeof(blocking_thread_wa), NORMALPRIO, blocking_thread, NULL);
-	isInitialized = true;
-}
+//void commands_init(void) {
+//	chMtxObjectInit(&print_mutex);
+//	chMtxObjectInit(&send_buffer_mutex);
+//	chMtxObjectInit(&terminal_mutex);
+//	chThdCreateStatic(blocking_thread_wa, sizeof(blocking_thread_wa), NORMALPRIO, blocking_thread, NULL);
+//	isInitialized = true;
+//}
 
 bool commands_is_initialized(void) {
 	return isInitialized;
@@ -742,16 +743,16 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 		}
 		break;
 
-	case COMM_NRF_START_PAIRING: {
-		int32_t ind = 0;
-		nrf_driver_start_pairing(buffer_get_int32(data, &ind));
-
-		ind = 0;
-		uint8_t send_buffer[50];
-		send_buffer[ind++] = packet_id;
-		send_buffer[ind++] = NRF_PAIR_STARTED;
-		reply_func(send_buffer, ind);
-	} break;
+//	case COMM_NRF_START_PAIRING: {
+//		int32_t ind = 0;
+//		nrf_driver_start_pairing(buffer_get_int32(data, &ind));
+//
+//		ind = 0;
+//		uint8_t send_buffer[50];
+//		send_buffer[ind++] = packet_id;
+//		send_buffer[ind++] = NRF_PAIR_STARTED;
+//		reply_func(send_buffer, ind);
+//	} break;
 
 	case COMM_GPD_SET_FSW: {
 		timeout_reset();

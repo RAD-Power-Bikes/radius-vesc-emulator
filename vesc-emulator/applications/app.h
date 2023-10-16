@@ -20,7 +20,7 @@
 #ifndef APP_H_
 #define APP_H_
 
-#include "conf_general.h"
+//#include "conf_general.h"
 
 // Functions
 const app_configuration* app_get_configuration(void);

@@ -24,6 +24,9 @@
 #include <stdbool.h>
 //#include "ch.h"
 
+// todo: if used port this to timer tick in esp32
+#define systime_t uint32_t
+
 // Data types
 typedef enum {
 	HW_TYPE_VESC = 0,
@@ -1067,182 +1070,182 @@ typedef enum {
 } COMM_PACKET_ID;
 
 // CAN commands
-typedef enum {
-	CAN_PACKET_SET_DUTY = 0,
-	CAN_PACKET_SET_CURRENT,
-	CAN_PACKET_SET_CURRENT_BRAKE,
-	CAN_PACKET_SET_RPM,
-	CAN_PACKET_SET_POS,
-	CAN_PACKET_FILL_RX_BUFFER,
-	CAN_PACKET_FILL_RX_BUFFER_LONG,
-	CAN_PACKET_PROCESS_RX_BUFFER,
-	CAN_PACKET_PROCESS_SHORT_BUFFER,
-	CAN_PACKET_STATUS,
-	CAN_PACKET_SET_CURRENT_REL,
-	CAN_PACKET_SET_CURRENT_BRAKE_REL,
-	CAN_PACKET_SET_CURRENT_HANDBRAKE,
-	CAN_PACKET_SET_CURRENT_HANDBRAKE_REL,
-	CAN_PACKET_STATUS_2,
-	CAN_PACKET_STATUS_3,
-	CAN_PACKET_STATUS_4,
-	CAN_PACKET_PING,
-	CAN_PACKET_PONG,
-	CAN_PACKET_DETECT_APPLY_ALL_FOC,
-	CAN_PACKET_DETECT_APPLY_ALL_FOC_RES,
-	CAN_PACKET_CONF_CURRENT_LIMITS,
-	CAN_PACKET_CONF_STORE_CURRENT_LIMITS,
-	CAN_PACKET_CONF_CURRENT_LIMITS_IN,
-	CAN_PACKET_CONF_STORE_CURRENT_LIMITS_IN,
-	CAN_PACKET_CONF_FOC_ERPMS,
-	CAN_PACKET_CONF_STORE_FOC_ERPMS,
-	CAN_PACKET_STATUS_5,
-	CAN_PACKET_POLL_TS5700N8501_STATUS,
-	CAN_PACKET_CONF_BATTERY_CUT,
-	CAN_PACKET_CONF_STORE_BATTERY_CUT,
-	CAN_PACKET_SHUTDOWN,
-	CAN_PACKET_IO_BOARD_ADC_1_TO_4,
-	CAN_PACKET_IO_BOARD_ADC_5_TO_8,
-	CAN_PACKET_IO_BOARD_ADC_9_TO_12,
-	CAN_PACKET_IO_BOARD_DIGITAL_IN,
-	CAN_PACKET_IO_BOARD_SET_OUTPUT_DIGITAL,
-	CAN_PACKET_IO_BOARD_SET_OUTPUT_PWM,
-	CAN_PACKET_BMS_V_TOT,
-	CAN_PACKET_BMS_I,
-	CAN_PACKET_BMS_AH_WH,
-	CAN_PACKET_BMS_V_CELL,
-	CAN_PACKET_BMS_BAL,
-	CAN_PACKET_BMS_TEMPS,
-	CAN_PACKET_BMS_HUM,
-	CAN_PACKET_BMS_SOC_SOH_TEMP_STAT,
-	CAN_PACKET_PSW_STAT,
-	CAN_PACKET_PSW_SWITCH,
-	CAN_PACKET_BMS_HW_DATA_1,
-	CAN_PACKET_BMS_HW_DATA_2,
-	CAN_PACKET_BMS_HW_DATA_3,
-	CAN_PACKET_BMS_HW_DATA_4,
-	CAN_PACKET_BMS_HW_DATA_5,
-	CAN_PACKET_BMS_AH_WH_CHG_TOTAL,
-	CAN_PACKET_BMS_AH_WH_DIS_TOTAL,
-	CAN_PACKET_UPDATE_PID_POS_OFFSET,
-	CAN_PACKET_POLL_ROTOR_POS,
-	CAN_PACKET_BMS_BOOT,
-	CAN_PACKET_MAKE_ENUM_32_BITS = 0xFFFFFFFF,
-} CAN_PACKET_ID;
+//typedef enum {
+//	CAN_PACKET_SET_DUTY = 0,
+//	CAN_PACKET_SET_CURRENT,
+//	CAN_PACKET_SET_CURRENT_BRAKE,
+//	CAN_PACKET_SET_RPM,
+//	CAN_PACKET_SET_POS,
+//	CAN_PACKET_FILL_RX_BUFFER,
+//	CAN_PACKET_FILL_RX_BUFFER_LONG,
+//	CAN_PACKET_PROCESS_RX_BUFFER,
+//	CAN_PACKET_PROCESS_SHORT_BUFFER,
+//	CAN_PACKET_STATUS,
+//	CAN_PACKET_SET_CURRENT_REL,
+//	CAN_PACKET_SET_CURRENT_BRAKE_REL,
+//	CAN_PACKET_SET_CURRENT_HANDBRAKE,
+//	CAN_PACKET_SET_CURRENT_HANDBRAKE_REL,
+//	CAN_PACKET_STATUS_2,
+//	CAN_PACKET_STATUS_3,
+//	CAN_PACKET_STATUS_4,
+//	CAN_PACKET_PING,
+//	CAN_PACKET_PONG,
+//	CAN_PACKET_DETECT_APPLY_ALL_FOC,
+//	CAN_PACKET_DETECT_APPLY_ALL_FOC_RES,
+//	CAN_PACKET_CONF_CURRENT_LIMITS,
+//	CAN_PACKET_CONF_STORE_CURRENT_LIMITS,
+//	CAN_PACKET_CONF_CURRENT_LIMITS_IN,
+//	CAN_PACKET_CONF_STORE_CURRENT_LIMITS_IN,
+//	CAN_PACKET_CONF_FOC_ERPMS,
+//	CAN_PACKET_CONF_STORE_FOC_ERPMS,
+//	CAN_PACKET_STATUS_5,
+//	CAN_PACKET_POLL_TS5700N8501_STATUS,
+//	CAN_PACKET_CONF_BATTERY_CUT,
+//	CAN_PACKET_CONF_STORE_BATTERY_CUT,
+//	CAN_PACKET_SHUTDOWN,
+//	CAN_PACKET_IO_BOARD_ADC_1_TO_4,
+//	CAN_PACKET_IO_BOARD_ADC_5_TO_8,
+//	CAN_PACKET_IO_BOARD_ADC_9_TO_12,
+//	CAN_PACKET_IO_BOARD_DIGITAL_IN,
+//	CAN_PACKET_IO_BOARD_SET_OUTPUT_DIGITAL,
+//	CAN_PACKET_IO_BOARD_SET_OUTPUT_PWM,
+//	CAN_PACKET_BMS_V_TOT,
+//	CAN_PACKET_BMS_I,
+//	CAN_PACKET_BMS_AH_WH,
+//	CAN_PACKET_BMS_V_CELL,
+//	CAN_PACKET_BMS_BAL,
+//	CAN_PACKET_BMS_TEMPS,
+//	CAN_PACKET_BMS_HUM,
+//	CAN_PACKET_BMS_SOC_SOH_TEMP_STAT,
+//	CAN_PACKET_PSW_STAT,
+//	CAN_PACKET_PSW_SWITCH,
+//	CAN_PACKET_BMS_HW_DATA_1,
+//	CAN_PACKET_BMS_HW_DATA_2,
+//	CAN_PACKET_BMS_HW_DATA_3,
+//	CAN_PACKET_BMS_HW_DATA_4,
+//	CAN_PACKET_BMS_HW_DATA_5,
+//	CAN_PACKET_BMS_AH_WH_CHG_TOTAL,
+//	CAN_PACKET_BMS_AH_WH_DIS_TOTAL,
+//	CAN_PACKET_UPDATE_PID_POS_OFFSET,
+//	CAN_PACKET_POLL_ROTOR_POS,
+//	CAN_PACKET_BMS_BOOT,
+//	CAN_PACKET_MAKE_ENUM_32_BITS = 0xFFFFFFFF,
+//} CAN_PACKET_ID;
+//
+//// Logged fault data
+//typedef struct {
+//	uint8_t motor;
+//	mc_fault_code fault;
+//	float current;
+//	float current_filtered;
+//	float voltage;
+//	float gate_driver_voltage;
+//	float duty;
+//	float rpm;
+//	int tacho;
+//	int cycles_running;
+//	int tim_val_samp;
+//	int tim_current_samp;
+//	int tim_top;
+//	int comm_step;
+//	float temperature;
+//	int drv8301_faults;
+//} fault_data;
+//
+//typedef struct {
+//	int js_x;
+//	int js_y;
+//	int acc_x;
+//	int acc_y;
+//	int acc_z;
+//	bool bt_c;
+//	bool bt_z;
+//	bool rev_has_state;
+//	bool is_rev;
+//} chuck_data;
 
-// Logged fault data
-typedef struct {
-	uint8_t motor;
-	mc_fault_code fault;
-	float current;
-	float current_filtered;
-	float voltage;
-	float gate_driver_voltage;
-	float duty;
-	float rpm;
-	int tacho;
-	int cycles_running;
-	int tim_val_samp;
-	int tim_current_samp;
-	int tim_top;
-	int comm_step;
-	float temperature;
-	int drv8301_faults;
-} fault_data;
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float rpm;
+//	float current;
+//	float duty;
+//} can_status_msg;
+//
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float amp_hours;
+//	float amp_hours_charged;
+//} can_status_msg_2;
+//
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float watt_hours;
+//	float watt_hours_charged;
+//} can_status_msg_3;
+//
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float temp_fet;
+//	float temp_motor;
+//	float current_in;
+//	float pid_pos_now;
+//} can_status_msg_4;
+//
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float v_in;
+//	int32_t tacho_value;
+//} can_status_msg_5;
 
-typedef struct {
-	int js_x;
-	int js_y;
-	int acc_x;
-	int acc_y;
-	int acc_z;
-	bool bt_c;
-	bool bt_z;
-	bool rev_has_state;
-	bool is_rev;
-} chuck_data;
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float adc_voltages[4];
+//} io_board_adc_values;
 
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float rpm;
-	float current;
-	float duty;
-} can_status_msg;
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	uint64_t inputs;
+//} io_board_digial_inputs;
 
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float amp_hours;
-	float amp_hours_charged;
-} can_status_msg_2;
+//typedef struct {
+//	int id;
+//	systime_t rx_time;
+//	float v_in;
+//	float v_out;
+//	float temp;
+//	bool is_out_on;
+//	bool is_pch_on;
+//	bool is_dsc_on;
+//} psw_status;
 
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float watt_hours;
-	float watt_hours_charged;
-} can_status_msg_3;
+//typedef struct {
+//	uint8_t js_x;
+//	uint8_t js_y;
+//	bool bt_c;
+//	bool bt_z;
+//	bool bt_push;
+//	bool rev_has_state;
+//	bool is_rev;
+//	float vbat;
+//} mote_state;
 
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float temp_fet;
-	float temp_motor;
-	float current_in;
-	float pid_pos_now;
-} can_status_msg_4;
-
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float v_in;
-	int32_t tacho_value;
-} can_status_msg_5;
-
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float adc_voltages[4];
-} io_board_adc_values;
-
-typedef struct {
-	int id;
-	systime_t rx_time;
-	uint64_t inputs;
-} io_board_digial_inputs;
-
-typedef struct {
-	int id;
-	systime_t rx_time;
-	float v_in;
-	float v_out;
-	float temp;
-	bool is_out_on;
-	bool is_pch_on;
-	bool is_dsc_on;
-} psw_status;
-
-typedef struct {
-	uint8_t js_x;
-	uint8_t js_y;
-	bool bt_c;
-	bool bt_z;
-	bool bt_push;
-	bool rev_has_state;
-	bool is_rev;
-	float vbat;
-} mote_state;
-
-typedef enum {
-	MOTE_PACKET_BATT_LEVEL = 0,
-	MOTE_PACKET_BUTTONS,
-	MOTE_PACKET_ALIVE,
-	MOTE_PACKET_FILL_RX_BUFFER,
-	MOTE_PACKET_FILL_RX_BUFFER_LONG,
-	MOTE_PACKET_PROCESS_RX_BUFFER,
-	MOTE_PACKET_PROCESS_SHORT_BUFFER,
-	MOTE_PACKET_PAIRING_INFO
-} MOTE_PACKET;
+//typedef enum {
+//	MOTE_PACKET_BATT_LEVEL = 0,
+//	MOTE_PACKET_BUTTONS,
+//	MOTE_PACKET_ALIVE,
+//	MOTE_PACKET_FILL_RX_BUFFER,
+//	MOTE_PACKET_FILL_RX_BUFFER_LONG,
+//	MOTE_PACKET_PROCESS_RX_BUFFER,
+//	MOTE_PACKET_PROCESS_SHORT_BUFFER,
+//	MOTE_PACKET_PAIRING_INFO
+//} MOTE_PACKET;
 
 typedef struct {
 	float v_in;
@@ -1270,59 +1273,59 @@ typedef struct {
     float vq;
 } mc_values;
 
-typedef enum {
-	NRF_PAIR_STARTED = 0,
-	NRF_PAIR_OK,
-	NRF_PAIR_FAIL
-} NRF_PAIR_RES;
+//typedef enum {
+//	NRF_PAIR_STARTED = 0,
+//	NRF_PAIR_OK,
+//	NRF_PAIR_FAIL
+//} NRF_PAIR_RES;
 
 // Orientation data
-typedef struct {
-	float q0;
-	float q1;
-	float q2;
-	float q3;
-	float integralFBx;
-	float integralFBy;
-	float integralFBz;
-	float accMagP;
-	int initialUpdateDone;
-} ATTITUDE_INFO;
+//typedef struct {
+//	float q0;
+//	float q1;
+//	float q2;
+//	float q3;
+//	float integralFBx;
+//	float integralFBy;
+//	float integralFBz;
+//	float accMagP;
+//	int initialUpdateDone;
+//} ATTITUDE_INFO;
 
 // Custom EEPROM variables
-typedef union {
-	uint32_t as_u32;
-	int32_t as_i32;
-	float as_float;
-} eeprom_var;
+//typedef union {
+//	uint32_t as_u32;
+//	int32_t as_i32;
+//	float as_float;
+//} eeprom_var;
 
 #define EEPROM_VARS_HW			64
 #define EEPROM_VARS_CUSTOM		64
 
-typedef struct {
-	float ah_tot;
-	float ah_charge_tot;
-	float wh_tot;
-	float wh_charge_tot;
-	float current_tot;
-	float current_in_tot;
-	uint8_t num_vescs;
-} setup_values;
+//typedef struct {
+//	float ah_tot;
+//	float ah_charge_tot;
+//	float wh_tot;
+//	float wh_charge_tot;
+//	float current_tot;
+//	float current_in_tot;
+//	uint8_t num_vescs;
+//} setup_values;
 
-typedef struct {
-	systime_t time_start;
-	double samples;
-	double speed_sum;
-	float max_speed;
-	double power_sum;
-	float max_power;
-	double temp_motor_sum;
-	float max_temp_motor;
-	double temp_mos_sum;
-	float max_temp_mos;
-	double current_sum;
-	float max_current;
-} setup_stats;
+//typedef struct {
+//	systime_t time_start;
+//	double samples;
+//	double speed_sum;
+//	float max_speed;
+//	double power_sum;
+//	float max_power;
+//	double temp_motor_sum;
+//	float max_temp_motor;
+//	double temp_mos_sum;
+//	float max_temp_mos;
+//	double current_sum;
+//	float max_current;
+//} setup_stats;
 
 #define BACKUP_VAR_INIT_CODE				92891934
 

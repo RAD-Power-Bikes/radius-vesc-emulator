@@ -17,10 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "app.h"
-#include "ch.h"
-#include "hal.h"
-#include "hw.h"
+//#include "app.h"
+//#include "ch.h"
+//#include "hal.h"
+//#include "hw.h"
 #include "packet.h"
 #include "commands.h"
 
