@@ -81,19 +81,19 @@ static void(* volatile send_func_can_fwd)(unsigned char *data, unsigned int len)
 static void(* volatile appdata_func)(unsigned char *data, unsigned int len) = 0;
 static void(* volatile hwdata_func)(unsigned char *data, unsigned int len) = 0;
 static disp_pos_mode display_position_mode;
-//static mutex_t print_mutex;
-//static mutex_t send_buffer_mutex;
-//static mutex_t terminal_mutex;
+static mutex_t print_mutex;
+static mutex_t send_buffer_mutex;
+static mutex_t terminal_mutex;
 static volatile int fw_version_sent_cnt = 0;
 static bool isInitialized = false;
 
-//void commands_init(void) {
-//	chMtxObjectInit(&print_mutex);
-//	chMtxObjectInit(&send_buffer_mutex);
-//	chMtxObjectInit(&terminal_mutex);
+void commands_init(void) {
+	chMtxObjectInit(&print_mutex);
+	chMtxObjectInit(&send_buffer_mutex);
+	chMtxObjectInit(&terminal_mutex);
 //	chThdCreateStatic(blocking_thread_wa, sizeof(blocking_thread_wa), NORMALPRIO, blocking_thread, NULL);
-//	isInitialized = true;
-//}
+	isInitialized = true;
+}
 
 bool commands_is_initialized(void) {
 	return isInitialized;
@@ -225,7 +225,8 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             //			send_buffer[ind - 1]++;
             //		}
             
-            send_buffer[ind++] = app_get_configuration()->pairing_done;
+//            send_buffer[ind++] = app_get_configuration()->pairing_done;
+            send_buffer[ind++] = 0;
             send_buffer[ind++] = FW_TEST_VERSION_NUMBER;
             
             send_buffer[ind++] = HW_TYPE_VESC;
@@ -255,11 +256,11 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             send_buffer[ind++] = 1;
 #endif
 #else
-            if (flash_helper_qmlui_data()) {
-                send_buffer[ind++] = flash_helper_qmlui_flags();
-            } else {
-                send_buffer[ind++] = 0;
-            }
+//            if (flash_helper_qmlui_data()) {
+//                send_buffer[ind++] = flash_helper_qmlui_flags();
+//            } else {
+//                send_buffer[ind++] = 0;
+//            }
 #endif
             
             fw_version_sent_cnt++;
@@ -1685,103 +1686,103 @@ void commands_send_gpd_buffer_notify(void) {
 	commands_send_packet(buffer, index);
 }
 
-void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf) {
-	chMtxLock(&send_buffer_mutex);
-	send_buffer_global[0] = packet_id;
-	int32_t len = confgenerator_serialize_mcconf(send_buffer_global + 1, mcconf);
-	commands_send_packet(send_buffer_global, len + 1);
-	chMtxUnlock(&send_buffer_mutex);
-}
+//void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf) {
+//	chMtxLock(&send_buffer_mutex);
+//	send_buffer_global[0] = packet_id;
+//	int32_t len = confgenerator_serialize_mcconf(send_buffer_global + 1, mcconf);
+//	commands_send_packet(send_buffer_global, len + 1);
+//	chMtxUnlock(&send_buffer_mutex);
+//}
+//
+//void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
+//	chMtxLock(&send_buffer_mutex);
+//	send_buffer_global[0] = packet_id;
+//	int32_t len = confgenerator_serialize_appconf(send_buffer_global + 1, appconf);
+//	commands_send_packet(send_buffer_global, len + 1);
+//	chMtxUnlock(&send_buffer_mutex);
+//}
+//
+//inline static float hw_lim_upper(float l, float h) {(void)l; return h;}
 
-void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
-	chMtxLock(&send_buffer_mutex);
-	send_buffer_global[0] = packet_id;
-	int32_t len = confgenerator_serialize_appconf(send_buffer_global + 1, appconf);
-	commands_send_packet(send_buffer_global, len + 1);
-	chMtxUnlock(&send_buffer_mutex);
-}
-
-inline static float hw_lim_upper(float l, float h) {(void)l; return h;}
-
-void commands_apply_mcconf_hw_limits(mc_configuration *mcconf) {
-	utils_truncate_number(&mcconf->l_current_max_scale, 0.0, 1.0);
-	utils_truncate_number(&mcconf->l_current_min_scale, 0.0, 1.0);
-
-	float ctrl_loop_freq = 0.0;
-
-	// This limit should always be active, as starving the threads never
-	// makes sense.
-#ifdef HW_LIM_FOC_CTRL_LOOP_FREQ
-    if (mcconf->foc_sample_v0_v7 == true) {
-    	//control loop executes twice per pwm cycle when sampling in v0 and v7
-		utils_truncate_number(&mcconf->foc_f_zv, HW_LIM_FOC_CTRL_LOOP_FREQ);
-		ctrl_loop_freq = mcconf->foc_f_zv;
-    } else {
-#ifdef HW_HAS_DUAL_MOTORS
-    	utils_truncate_number(&mcconf->foc_f_zv, HW_LIM_FOC_CTRL_LOOP_FREQ);
-    	ctrl_loop_freq = mcconf->foc_f_zv;
-#else
-		utils_truncate_number(&mcconf->foc_f_zv, HW_LIM_FOC_CTRL_LOOP_FREQ * 2.0);
-		ctrl_loop_freq = mcconf->foc_f_zv / 2.0;
-#endif
-    }
-#endif
-
-    if (ctrl_loop_freq >= (hw_lim_upper(HW_LIM_FOC_CTRL_LOOP_FREQ) * 0.9)) {
-    	utils_truncate_number_int(&mcconf->m_hall_extra_samples, 0, 2);
-    } else if (ctrl_loop_freq >= (hw_lim_upper(HW_LIM_FOC_CTRL_LOOP_FREQ) * 0.7)) {
-    	utils_truncate_number_int(&mcconf->m_hall_extra_samples, 0, 4);
-    } else {
-    	utils_truncate_number_int(&mcconf->m_hall_extra_samples, 0, 10);
-    }
-
-#ifndef DISABLE_HW_LIMITS
-
-    // TODO: Maybe truncate values that get close to numerical instabilities when set
-    // close to each other, such as
-    //
-    // conf->l_temp_motor_start, conf->l_temp_motor_end
-    // and
-    // conf->l_temp_fet_start, conf->l_temp_fet_end
-    //
-    // A division by 0 is avoided in the code, but getting close can still make things
-    // oscillate. At the moment we leave the responsibility of setting sane values
-    // to the user.
-
-#ifdef HW_LIM_CURRENT
-	utils_truncate_number(&mcconf->l_current_max, HW_LIM_CURRENT);
-	utils_truncate_number(&mcconf->l_current_min, HW_LIM_CURRENT);
-#endif
-#ifdef HW_LIM_CURRENT_IN
-	utils_truncate_number(&mcconf->l_in_current_max, HW_LIM_CURRENT_IN);
-	utils_truncate_number(&mcconf->l_in_current_min, HW_LIM_CURRENT);
-#endif
-#ifdef HW_LIM_CURRENT_ABS
-	utils_truncate_number(&mcconf->l_abs_current_max, HW_LIM_CURRENT_ABS);
-#endif
-#ifdef HW_LIM_VIN
-	utils_truncate_number(&mcconf->l_max_vin, HW_LIM_VIN);
-	utils_truncate_number(&mcconf->l_min_vin, HW_LIM_VIN);
-#endif
-#ifdef HW_LIM_ERPM
-	utils_truncate_number(&mcconf->l_max_erpm, HW_LIM_ERPM);
-	utils_truncate_number(&mcconf->l_min_erpm, HW_LIM_ERPM);
-#endif
-#ifdef HW_LIM_DUTY_MIN
-	utils_truncate_number(&mcconf->l_min_duty, HW_LIM_DUTY_MIN);
-#endif
-#ifdef HW_LIM_DUTY_MAX
-	utils_truncate_number(&mcconf->l_max_duty, HW_LIM_DUTY_MAX);
-#endif
-#ifdef HW_LIM_TEMP_FET
-	utils_truncate_number(&mcconf->l_temp_fet_start, HW_LIM_TEMP_FET);
-	utils_truncate_number(&mcconf->l_temp_fet_end, HW_LIM_TEMP_FET);
-#endif
-#ifdef HW_FOC_CURRENT_FILTER_LIM
-	utils_truncate_number(&mcconf->foc_current_filter_const, HW_FOC_CURRENT_FILTER_LIM);
-#endif
-#endif
-}
+//void commands_apply_mcconf_hw_limits(mc_configuration *mcconf) {
+//	utils_truncate_number(&mcconf->l_current_max_scale, 0.0, 1.0);
+//	utils_truncate_number(&mcconf->l_current_min_scale, 0.0, 1.0);
+//
+//	float ctrl_loop_freq = 0.0;
+//
+//	// This limit should always be active, as starving the threads never
+//	// makes sense.
+//#ifdef HW_LIM_FOC_CTRL_LOOP_FREQ
+//    if (mcconf->foc_sample_v0_v7 == true) {
+//    	//control loop executes twice per pwm cycle when sampling in v0 and v7
+//		utils_truncate_number(&mcconf->foc_f_zv, HW_LIM_FOC_CTRL_LOOP_FREQ);
+//		ctrl_loop_freq = mcconf->foc_f_zv;
+//    } else {
+//#ifdef HW_HAS_DUAL_MOTORS
+//    	utils_truncate_number(&mcconf->foc_f_zv, HW_LIM_FOC_CTRL_LOOP_FREQ);
+//    	ctrl_loop_freq = mcconf->foc_f_zv;
+//#else
+//		utils_truncate_number(&mcconf->foc_f_zv, HW_LIM_FOC_CTRL_LOOP_FREQ * 2.0);
+//		ctrl_loop_freq = mcconf->foc_f_zv / 2.0;
+//#endif
+//    }
+//#endif
+//
+//    if (ctrl_loop_freq >= (hw_lim_upper(HW_LIM_FOC_CTRL_LOOP_FREQ) * 0.9)) {
+//    	utils_truncate_number_int(&mcconf->m_hall_extra_samples, 0, 2);
+//    } else if (ctrl_loop_freq >= (hw_lim_upper(HW_LIM_FOC_CTRL_LOOP_FREQ) * 0.7)) {
+//    	utils_truncate_number_int(&mcconf->m_hall_extra_samples, 0, 4);
+//    } else {
+//    	utils_truncate_number_int(&mcconf->m_hall_extra_samples, 0, 10);
+//    }
+//
+//#ifndef DISABLE_HW_LIMITS
+//
+//    // TODO: Maybe truncate values that get close to numerical instabilities when set
+//    // close to each other, such as
+//    //
+//    // conf->l_temp_motor_start, conf->l_temp_motor_end
+//    // and
+//    // conf->l_temp_fet_start, conf->l_temp_fet_end
+//    //
+//    // A division by 0 is avoided in the code, but getting close can still make things
+//    // oscillate. At the moment we leave the responsibility of setting sane values
+//    // to the user.
+//
+//#ifdef HW_LIM_CURRENT
+//	utils_truncate_number(&mcconf->l_current_max, HW_LIM_CURRENT);
+//	utils_truncate_number(&mcconf->l_current_min, HW_LIM_CURRENT);
+//#endif
+//#ifdef HW_LIM_CURRENT_IN
+//	utils_truncate_number(&mcconf->l_in_current_max, HW_LIM_CURRENT_IN);
+//	utils_truncate_number(&mcconf->l_in_current_min, HW_LIM_CURRENT);
+//#endif
+//#ifdef HW_LIM_CURRENT_ABS
+//	utils_truncate_number(&mcconf->l_abs_current_max, HW_LIM_CURRENT_ABS);
+//#endif
+//#ifdef HW_LIM_VIN
+//	utils_truncate_number(&mcconf->l_max_vin, HW_LIM_VIN);
+//	utils_truncate_number(&mcconf->l_min_vin, HW_LIM_VIN);
+//#endif
+//#ifdef HW_LIM_ERPM
+//	utils_truncate_number(&mcconf->l_max_erpm, HW_LIM_ERPM);
+//	utils_truncate_number(&mcconf->l_min_erpm, HW_LIM_ERPM);
+//#endif
+//#ifdef HW_LIM_DUTY_MIN
+//	utils_truncate_number(&mcconf->l_min_duty, HW_LIM_DUTY_MIN);
+//#endif
+//#ifdef HW_LIM_DUTY_MAX
+//	utils_truncate_number(&mcconf->l_max_duty, HW_LIM_DUTY_MAX);
+//#endif
+//#ifdef HW_LIM_TEMP_FET
+//	utils_truncate_number(&mcconf->l_temp_fet_start, HW_LIM_TEMP_FET);
+//	utils_truncate_number(&mcconf->l_temp_fet_end, HW_LIM_TEMP_FET);
+//#endif
+//#ifdef HW_FOC_CURRENT_FILTER_LIM
+//	utils_truncate_number(&mcconf->foc_current_filter_const, HW_FOC_CURRENT_FILTER_LIM);
+//#endif
+//#endif
+//}
 
 void commands_init_plot(char *namex, char *namey) {
 	int ind = 0;
@@ -1832,480 +1833,480 @@ int commands_get_fw_version_sent_cnt(void) {
 // TODO: The commands_set_ble_name and commands_set_ble_pin are not
 // tested. Test them, and remove this comment when done!
 
-void commands_set_ble_name(char* name) {
-	int ind = 0;
-	int name_len = strlen(name);
-	if (name_len > 27) {
-		name_len = 27;
-	}
-
-	uint8_t buffer[name_len + 2];
-	buffer[ind++] = COMM_SET_BLE_NAME;
-	memcpy(buffer + ind, name, name_len);
-	ind += name_len;
-	buffer[ind++] = '\0';
-
-#ifdef HW_UART_P_DEV
-	app_uartcomm_send_packet(buffer, ind, UART_PORT_BUILTIN);
-#else
-	app_uartcomm_send_packet(buffer, ind, UART_PORT_COMM_HEADER);
-#endif
-}
-
-void commands_set_ble_pin(char* pin) {
-	int ind = 0;
-	int pin_len = strlen(pin);
-	if (pin_len > 27) {
-		pin_len = 27;
-	}
-
-	uint8_t buffer[pin_len + 2];
-	buffer[ind++] = COMM_SET_BLE_NAME;
-	memcpy(buffer + ind, pin, pin_len);
-	ind += pin_len;
-	buffer[ind++] = '\0';
-#ifdef HW_UART_P_DEV
-	app_uartcomm_send_packet(buffer, ind, UART_PORT_BUILTIN);
-#else
-	app_uartcomm_send_packet(buffer, ind, UART_PORT_COMM_HEADER);
-#endif
-}
-
-static THD_FUNCTION(blocking_thread, arg) {
-	(void)arg;
-
-	chRegSetThreadName("comm_block");
-
-	blocking_tp = chThdGetSelfX();
-
-	for(;;) {
-		is_blocking = false;
-
-		chEvtWaitAny((eventmask_t) 1);
-
-		mc_interface_select_motor_thread(blocking_thread_motor);
-
-		uint8_t *data = blocking_thread_cmd_buffer;
-		unsigned int len = blocking_thread_cmd_len;
-
-		COMM_PACKET_ID packet_id;
-		static uint8_t send_buffer[512];
-
-		packet_id = data[0];
-		data++;
-		len--;
-
-		switch (packet_id) {
-		case COMM_DETECT_MOTOR_PARAM: {
-			int32_t ind = 0;
-			float detect_current = buffer_get_float32(data, 1e3, &ind);
-			float detect_min_rpm = buffer_get_float32(data, 1e3, &ind);
-			float detect_low_duty = buffer_get_float32(data, 1e3, &ind);
-			float detect_cycle_int_limit;
-			float detect_coupling_k;
-			int8_t detect_hall_table[8];
-			int detect_hall_res;
-
-			if (!conf_general_detect_motor_param(detect_current, detect_min_rpm,
-					detect_low_duty, &detect_cycle_int_limit, &detect_coupling_k,
-					detect_hall_table, &detect_hall_res)) {
-				detect_cycle_int_limit = 0.0;
-				detect_coupling_k = 0.0;
-			}
-
-			ind = 0;
-			send_buffer[ind++] = COMM_DETECT_MOTOR_PARAM;
-			buffer_append_int32(send_buffer, (int32_t)(detect_cycle_int_limit * 1000.0), &ind);
-			buffer_append_int32(send_buffer, (int32_t)(detect_coupling_k * 1000.0), &ind);
-			memcpy(send_buffer + ind, detect_hall_table, 8);
-			ind += 8;
-			send_buffer[ind++] = detect_hall_res;
-
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_DETECT_MOTOR_R_L: {
-			mc_configuration *mcconf = mempools_alloc_mcconf();
-			*mcconf = *mc_interface_get_configuration();
-			mc_configuration *mcconf_old = mempools_alloc_mcconf();
-			*mcconf_old = *mcconf;
-
-			mcconf->motor_type = MOTOR_TYPE_FOC;
-			mc_interface_set_configuration(mcconf);
-
-			float r = 0.0;
-			float l = 0.0;
-			float ld_lq_diff = 0.0;
-			bool res = mcpwm_foc_measure_res_ind(&r, &l, &ld_lq_diff);
-			mc_interface_set_configuration(mcconf_old);
-
-			if (!res) {
-				r = 0.0;
-				l = 0.0;
-			}
-
-			int32_t ind = 0;
-			send_buffer[ind++] = COMM_DETECT_MOTOR_R_L;
-			buffer_append_float32(send_buffer, r, 1e6, &ind);
-			buffer_append_float32(send_buffer, l, 1e3, &ind);
-			buffer_append_float32(send_buffer, ld_lq_diff, 1e3, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-
-			mempools_free_mcconf(mcconf);
-			mempools_free_mcconf(mcconf_old);
-		} break;
-
-		case COMM_DETECT_MOTOR_FLUX_LINKAGE: {
-			int32_t ind = 0;
-			float current = buffer_get_float32(data, 1e3, &ind);
-			float min_rpm = buffer_get_float32(data, 1e3, &ind);
-			float duty = buffer_get_float32(data, 1e3, &ind);
-			float resistance = buffer_get_float32(data, 1e6, &ind);
-
-			float linkage;
-			bool res = conf_general_measure_flux_linkage(current, duty, min_rpm, resistance, &linkage);
-
-			if (!res) {
-				linkage = 0.0;
-			}
-
-			ind = 0;
-			send_buffer[ind++] = COMM_DETECT_MOTOR_FLUX_LINKAGE;
-			buffer_append_float32(send_buffer, linkage, 1e7, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_DETECT_ENCODER: {
-			if (encoder_is_configured()) {
-				mc_configuration *mcconf = mempools_alloc_mcconf();
-				*mcconf = *mc_interface_get_configuration();
-				mc_configuration *mcconf_old = mempools_alloc_mcconf();
-				*mcconf_old = *mcconf;
-
-				int32_t ind = 0;
-				float current = buffer_get_float32(data, 1e3, &ind);
-
-				mcconf->motor_type = MOTOR_TYPE_FOC;
-				mcconf->foc_f_zv = 10000.0;
-				mcconf->foc_current_kp = 0.01;
-				mcconf->foc_current_ki = 10.0;
-				mc_interface_set_configuration(mcconf);
-
-				float offset = 0.0;
-				float ratio = 0.0;
-				bool inverted = false;
-				mcpwm_foc_encoder_detect(current, false, &offset, &ratio, &inverted);
-				mc_interface_set_configuration(mcconf_old);
-
-				ind = 0;
-				send_buffer[ind++] = COMM_DETECT_ENCODER;
-				buffer_append_float32(send_buffer, offset, 1e6, &ind);
-				buffer_append_float32(send_buffer, ratio, 1e6, &ind);
-				send_buffer[ind++] = inverted;
-
-				if (send_func_blocking) {
-					send_func_blocking(send_buffer, ind);
-				}
-
-				mempools_free_mcconf(mcconf);
-				mempools_free_mcconf(mcconf_old);
-			} else {
-				int32_t ind = 0;
-				send_buffer[ind++] = COMM_DETECT_ENCODER;
-				buffer_append_float32(send_buffer, 1001.0, 1e6, &ind);
-				buffer_append_float32(send_buffer, 0.0, 1e6, &ind);
-				send_buffer[ind++] = false;
-
-				if (send_func_blocking) {
-					send_func_blocking(send_buffer, ind);
-				}
-			}
-		} break;
-
-		case COMM_DETECT_HALL_FOC: {
-			mc_configuration *mcconf = mempools_alloc_mcconf();
-			*mcconf = *mc_interface_get_configuration();
-
-			if (mcconf->m_sensor_port_mode == SENSOR_PORT_MODE_HALL) {
-				mc_configuration *mcconf_old = mempools_alloc_mcconf();
-				*mcconf_old = *mcconf;
-
-				int32_t ind = 0;
-				float current = buffer_get_float32(data, 1e3, &ind);
-
-				mcconf->motor_type = MOTOR_TYPE_FOC;
-				mcconf->foc_f_zv = 10000.0;
-				mcconf->foc_current_kp = 0.01;
-				mcconf->foc_current_ki = 10.0;
-				mc_interface_set_configuration(mcconf);
-
-				uint8_t hall_tab[8];
-				bool res = mcpwm_foc_hall_detect(current, hall_tab);
-				mc_interface_set_configuration(mcconf_old);
-
-				ind = 0;
-				send_buffer[ind++] = COMM_DETECT_HALL_FOC;
-				memcpy(send_buffer + ind, hall_tab, 8);
-				ind += 8;
-				send_buffer[ind++] = res ? 0 : 1;
-
-				if (send_func_blocking) {
-					send_func_blocking(send_buffer, ind);
-				}
-
-				mempools_free_mcconf(mcconf_old);
-			} else {
-				int32_t ind = 0;
-				send_buffer[ind++] = COMM_DETECT_HALL_FOC;
-				memset(send_buffer, 255, 8);
-				ind += 8;
-				send_buffer[ind++] = 0;
-				if (send_func_blocking) {
-					send_func_blocking(send_buffer, ind);
-				}
-			}
-
-			mempools_free_mcconf(mcconf);
-		} break;
-
-		case COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP: {
-			int32_t ind = 0;
-			float current = buffer_get_float32(data, 1e3, &ind);
-			float erpm_per_sec = buffer_get_float32(data, 1e3, &ind);
-			float duty = buffer_get_float32(data, 1e3, &ind);
-			float resistance = buffer_get_float32(data, 1e6, &ind);
-			float inductance = 0.0;
-
-			if (len >= (uint32_t)ind + 4) {
-				inductance = buffer_get_float32(data, 1e8, &ind);
-			}
-
-			float linkage, linkage_undriven, undriven_samples;
-			bool res = conf_general_measure_flux_linkage_openloop(current, duty,
-					erpm_per_sec, resistance, inductance,
-					&linkage, &linkage_undriven, &undriven_samples);
-
-			if (undriven_samples > 60) {
-				linkage = linkage_undriven;
-			}
-
-			if (!res) {
-				linkage = 0.0;
-			}
-
-			ind = 0;
-			send_buffer[ind++] = COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP;
-			buffer_append_float32(send_buffer, linkage, 1e7, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_DETECT_APPLY_ALL_FOC: {
-			int32_t ind = 0;
-			bool detect_can = data[ind++];
-			float max_power_loss = buffer_get_float32(data, 1e3, &ind);
-			float min_current_in = buffer_get_float32(data, 1e3, &ind);
-			float max_current_in = buffer_get_float32(data, 1e3, &ind);
-			float openloop_rpm = buffer_get_float32(data, 1e3, &ind);
-			float sl_erpm = buffer_get_float32(data, 1e3, &ind);
-
-			int res = conf_general_detect_apply_all_foc_can(detect_can, max_power_loss,
-					min_current_in, max_current_in, openloop_rpm, sl_erpm);
-
-			ind = 0;
-			send_buffer[ind++] = COMM_DETECT_APPLY_ALL_FOC;
-			buffer_append_int16(send_buffer, res, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_TERMINAL_CMD:
-			data[len] = '\0';
-			chMtxLock(&terminal_mutex);
-			terminal_process_string((char*)data);
-			chMtxUnlock(&terminal_mutex);
-			break;
-
-		case COMM_PING_CAN: {
-			int32_t ind = 0;
-			send_buffer[ind++] = COMM_PING_CAN;
-
-			for (uint8_t i = 0;i < 255;i++) {
-				HW_TYPE hw_type;
-				if (comm_can_ping(i, &hw_type)) {
-					send_buffer[ind++] = i;
-				}
-			}
-
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-#if HAS_BLACKMAGIC
-		case COMM_BM_CONNECT: {
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, bm_connect(), &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_ERASE_FLASH_ALL: {
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, bm_erase_flash_all(), &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_WRITE_FLASH_LZO:
-		case COMM_BM_WRITE_FLASH: {
-			if (packet_id == COMM_BM_WRITE_FLASH_LZO) {
-				memcpy(send_buffer, data + 6, len - 6);
-				int32_t ind = 4;
-				lzo_uint decompressed_len = buffer_get_uint16(data, &ind);
-				lzo1x_decompress_safe(send_buffer, len - 6, data + 4, &decompressed_len, NULL);
-				len = decompressed_len + 4;
-			}
-
-			int32_t ind = 0;
-			uint32_t addr = buffer_get_uint32(data, &ind);
-
-			int res = bm_write_flash(addr, data + ind, len - ind);
-
-			ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, res, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_REBOOT: {
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, bm_reboot(), &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_HALT_REQ: {
-			bm_halt_req();
-
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_DISCONNECT: {
-			bm_disconnect();
-			bm_leave_nrf_debug_mode();
-
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_MAP_PINS_DEFAULT: {
-			bm_default_swd_pins();
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, 1, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_MAP_PINS_NRF5X: {
-			int32_t ind = 0;
-			send_buffer[ind++] = packet_id;
-
-#ifdef NRF5x_SWDIO_GPIO
-			buffer_append_int16(send_buffer, 1, &ind);
-			bm_change_swd_pins(NRF5x_SWDIO_GPIO, NRF5x_SWDIO_PIN,
-					NRF5x_SWCLK_GPIO, NRF5x_SWCLK_PIN);
-#else
-			buffer_append_int16(send_buffer, 0, &ind);
-#endif
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		case COMM_BM_MEM_READ: {
-			int32_t ind = 0;
-			uint32_t addr = buffer_get_uint32(data, &ind);
-			uint16_t read_len = buffer_get_uint16(data, &ind);
-
-			if (read_len > sizeof(send_buffer) - 3) {
-				read_len = sizeof(send_buffer) - 3;
-			}
-
-			int res = bm_mem_read(addr, send_buffer + 3, read_len);
-
-			ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, res, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind + read_len);
-			}
-		} break;
-
-		case COMM_BM_MEM_WRITE: {
-			int32_t ind = 0;
-			uint32_t addr = buffer_get_uint32(data, &ind);
-
-			int res = bm_mem_write(addr, data + ind, len - ind);
-
-			ind = 0;
-			send_buffer[ind++] = packet_id;
-			buffer_append_int16(send_buffer, res, &ind);
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-#endif
-		case COMM_GET_IMU_CALIBRATION: {
-			int32_t ind = 0;
-			float yaw = buffer_get_float32(data, 1e3, &ind);
-			float imu_cal[9];
-			imu_get_calibration(yaw, imu_cal);
-
-			ind = 0;
-			send_buffer[ind++] = COMM_GET_IMU_CALIBRATION;
-			buffer_append_float32(send_buffer, imu_cal[0], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[1], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[2], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[3], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[4], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[5], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[6], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[7], 1e6, &ind);
-			buffer_append_float32(send_buffer, imu_cal[8], 1e6, &ind);
-
-			if (send_func_blocking) {
-				send_func_blocking(send_buffer, ind);
-			}
-		} break;
-
-		default:
-			break;
-		}
-	}
-}
+//void commands_set_ble_name(char* name) {
+//	int ind = 0;
+//	int name_len = strlen(name);
+//	if (name_len > 27) {
+//		name_len = 27;
+//	}
+//
+//	uint8_t buffer[name_len + 2];
+//	buffer[ind++] = COMM_SET_BLE_NAME;
+//	memcpy(buffer + ind, name, name_len);
+//	ind += name_len;
+//	buffer[ind++] = '\0';
+//
+//#ifdef HW_UART_P_DEV
+//	app_uartcomm_send_packet(buffer, ind, UART_PORT_BUILTIN);
+//#else
+//	app_uartcomm_send_packet(buffer, ind, UART_PORT_COMM_HEADER);
+//#endif
+//}
+
+//void commands_set_ble_pin(char* pin) {
+//	int ind = 0;
+//	int pin_len = strlen(pin);
+//	if (pin_len > 27) {
+//		pin_len = 27;
+//	}
+//
+//	uint8_t buffer[pin_len + 2];
+//	buffer[ind++] = COMM_SET_BLE_NAME;
+//	memcpy(buffer + ind, pin, pin_len);
+//	ind += pin_len;
+//	buffer[ind++] = '\0';
+//#ifdef HW_UART_P_DEV
+//	app_uartcomm_send_packet(buffer, ind, UART_PORT_BUILTIN);
+//#else
+//	app_uartcomm_send_packet(buffer, ind, UART_PORT_COMM_HEADER);
+//#endif
+//}
+
+//static THD_FUNCTION(blocking_thread, arg) {
+//	(void)arg;
+//
+//	chRegSetThreadName("comm_block");
+//
+//	blocking_tp = chThdGetSelfX();
+//
+//	for(;;) {
+//		is_blocking = false;
+//
+//		chEvtWaitAny((eventmask_t) 1);
+//
+//		mc_interface_select_motor_thread(blocking_thread_motor);
+//
+//		uint8_t *data = blocking_thread_cmd_buffer;
+//		unsigned int len = blocking_thread_cmd_len;
+//
+//		COMM_PACKET_ID packet_id;
+//		static uint8_t send_buffer[512];
+//
+//		packet_id = data[0];
+//		data++;
+//		len--;
+//
+//		switch (packet_id) {
+//		case COMM_DETECT_MOTOR_PARAM: {
+//			int32_t ind = 0;
+//			float detect_current = buffer_get_float32(data, 1e3, &ind);
+//			float detect_min_rpm = buffer_get_float32(data, 1e3, &ind);
+//			float detect_low_duty = buffer_get_float32(data, 1e3, &ind);
+//			float detect_cycle_int_limit;
+//			float detect_coupling_k;
+//			int8_t detect_hall_table[8];
+//			int detect_hall_res;
+//
+//			if (!conf_general_detect_motor_param(detect_current, detect_min_rpm,
+//					detect_low_duty, &detect_cycle_int_limit, &detect_coupling_k,
+//					detect_hall_table, &detect_hall_res)) {
+//				detect_cycle_int_limit = 0.0;
+//				detect_coupling_k = 0.0;
+//			}
+//
+//			ind = 0;
+//			send_buffer[ind++] = COMM_DETECT_MOTOR_PARAM;
+//			buffer_append_int32(send_buffer, (int32_t)(detect_cycle_int_limit * 1000.0), &ind);
+//			buffer_append_int32(send_buffer, (int32_t)(detect_coupling_k * 1000.0), &ind);
+//			memcpy(send_buffer + ind, detect_hall_table, 8);
+//			ind += 8;
+//			send_buffer[ind++] = detect_hall_res;
+//
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_DETECT_MOTOR_R_L: {
+//			mc_configuration *mcconf = mempools_alloc_mcconf();
+//			*mcconf = *mc_interface_get_configuration();
+//			mc_configuration *mcconf_old = mempools_alloc_mcconf();
+//			*mcconf_old = *mcconf;
+//
+//			mcconf->motor_type = MOTOR_TYPE_FOC;
+//			mc_interface_set_configuration(mcconf);
+//
+//			float r = 0.0;
+//			float l = 0.0;
+//			float ld_lq_diff = 0.0;
+//			bool res = mcpwm_foc_measure_res_ind(&r, &l, &ld_lq_diff);
+//			mc_interface_set_configuration(mcconf_old);
+//
+//			if (!res) {
+//				r = 0.0;
+//				l = 0.0;
+//			}
+//
+//			int32_t ind = 0;
+//			send_buffer[ind++] = COMM_DETECT_MOTOR_R_L;
+//			buffer_append_float32(send_buffer, r, 1e6, &ind);
+//			buffer_append_float32(send_buffer, l, 1e3, &ind);
+//			buffer_append_float32(send_buffer, ld_lq_diff, 1e3, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//
+//			mempools_free_mcconf(mcconf);
+//			mempools_free_mcconf(mcconf_old);
+//		} break;
+//
+//		case COMM_DETECT_MOTOR_FLUX_LINKAGE: {
+//			int32_t ind = 0;
+//			float current = buffer_get_float32(data, 1e3, &ind);
+//			float min_rpm = buffer_get_float32(data, 1e3, &ind);
+//			float duty = buffer_get_float32(data, 1e3, &ind);
+//			float resistance = buffer_get_float32(data, 1e6, &ind);
+//
+//			float linkage;
+//			bool res = conf_general_measure_flux_linkage(current, duty, min_rpm, resistance, &linkage);
+//
+//			if (!res) {
+//				linkage = 0.0;
+//			}
+//
+//			ind = 0;
+//			send_buffer[ind++] = COMM_DETECT_MOTOR_FLUX_LINKAGE;
+//			buffer_append_float32(send_buffer, linkage, 1e7, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_DETECT_ENCODER: {
+//			if (encoder_is_configured()) {
+//				mc_configuration *mcconf = mempools_alloc_mcconf();
+//				*mcconf = *mc_interface_get_configuration();
+//				mc_configuration *mcconf_old = mempools_alloc_mcconf();
+//				*mcconf_old = *mcconf;
+//
+//				int32_t ind = 0;
+//				float current = buffer_get_float32(data, 1e3, &ind);
+//
+//				mcconf->motor_type = MOTOR_TYPE_FOC;
+//				mcconf->foc_f_zv = 10000.0;
+//				mcconf->foc_current_kp = 0.01;
+//				mcconf->foc_current_ki = 10.0;
+//				mc_interface_set_configuration(mcconf);
+//
+//				float offset = 0.0;
+//				float ratio = 0.0;
+//				bool inverted = false;
+//				mcpwm_foc_encoder_detect(current, false, &offset, &ratio, &inverted);
+//				mc_interface_set_configuration(mcconf_old);
+//
+//				ind = 0;
+//				send_buffer[ind++] = COMM_DETECT_ENCODER;
+//				buffer_append_float32(send_buffer, offset, 1e6, &ind);
+//				buffer_append_float32(send_buffer, ratio, 1e6, &ind);
+//				send_buffer[ind++] = inverted;
+//
+//				if (send_func_blocking) {
+//					send_func_blocking(send_buffer, ind);
+//				}
+//
+//				mempools_free_mcconf(mcconf);
+//				mempools_free_mcconf(mcconf_old);
+//			} else {
+//				int32_t ind = 0;
+//				send_buffer[ind++] = COMM_DETECT_ENCODER;
+//				buffer_append_float32(send_buffer, 1001.0, 1e6, &ind);
+//				buffer_append_float32(send_buffer, 0.0, 1e6, &ind);
+//				send_buffer[ind++] = false;
+//
+//				if (send_func_blocking) {
+//					send_func_blocking(send_buffer, ind);
+//				}
+//			}
+//		} break;
+//
+//		case COMM_DETECT_HALL_FOC: {
+//			mc_configuration *mcconf = mempools_alloc_mcconf();
+//			*mcconf = *mc_interface_get_configuration();
+//
+//			if (mcconf->m_sensor_port_mode == SENSOR_PORT_MODE_HALL) {
+//				mc_configuration *mcconf_old = mempools_alloc_mcconf();
+//				*mcconf_old = *mcconf;
+//
+//				int32_t ind = 0;
+//				float current = buffer_get_float32(data, 1e3, &ind);
+//
+//				mcconf->motor_type = MOTOR_TYPE_FOC;
+//				mcconf->foc_f_zv = 10000.0;
+//				mcconf->foc_current_kp = 0.01;
+//				mcconf->foc_current_ki = 10.0;
+//				mc_interface_set_configuration(mcconf);
+//
+//				uint8_t hall_tab[8];
+//				bool res = mcpwm_foc_hall_detect(current, hall_tab);
+//				mc_interface_set_configuration(mcconf_old);
+//
+//				ind = 0;
+//				send_buffer[ind++] = COMM_DETECT_HALL_FOC;
+//				memcpy(send_buffer + ind, hall_tab, 8);
+//				ind += 8;
+//				send_buffer[ind++] = res ? 0 : 1;
+//
+//				if (send_func_blocking) {
+//					send_func_blocking(send_buffer, ind);
+//				}
+//
+//				mempools_free_mcconf(mcconf_old);
+//			} else {
+//				int32_t ind = 0;
+//				send_buffer[ind++] = COMM_DETECT_HALL_FOC;
+//				memset(send_buffer, 255, 8);
+//				ind += 8;
+//				send_buffer[ind++] = 0;
+//				if (send_func_blocking) {
+//					send_func_blocking(send_buffer, ind);
+//				}
+//			}
+//
+//			mempools_free_mcconf(mcconf);
+//		} break;
+//
+//		case COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP: {
+//			int32_t ind = 0;
+//			float current = buffer_get_float32(data, 1e3, &ind);
+//			float erpm_per_sec = buffer_get_float32(data, 1e3, &ind);
+//			float duty = buffer_get_float32(data, 1e3, &ind);
+//			float resistance = buffer_get_float32(data, 1e6, &ind);
+//			float inductance = 0.0;
+//
+//			if (len >= (uint32_t)ind + 4) {
+//				inductance = buffer_get_float32(data, 1e8, &ind);
+//			}
+//
+//			float linkage, linkage_undriven, undriven_samples;
+//			bool res = conf_general_measure_flux_linkage_openloop(current, duty,
+//					erpm_per_sec, resistance, inductance,
+//					&linkage, &linkage_undriven, &undriven_samples);
+//
+//			if (undriven_samples > 60) {
+//				linkage = linkage_undriven;
+//			}
+//
+//			if (!res) {
+//				linkage = 0.0;
+//			}
+//
+//			ind = 0;
+//			send_buffer[ind++] = COMM_DETECT_MOTOR_FLUX_LINKAGE_OPENLOOP;
+//			buffer_append_float32(send_buffer, linkage, 1e7, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_DETECT_APPLY_ALL_FOC: {
+//			int32_t ind = 0;
+//			bool detect_can = data[ind++];
+//			float max_power_loss = buffer_get_float32(data, 1e3, &ind);
+//			float min_current_in = buffer_get_float32(data, 1e3, &ind);
+//			float max_current_in = buffer_get_float32(data, 1e3, &ind);
+//			float openloop_rpm = buffer_get_float32(data, 1e3, &ind);
+//			float sl_erpm = buffer_get_float32(data, 1e3, &ind);
+//
+//			int res = conf_general_detect_apply_all_foc_can(detect_can, max_power_loss,
+//					min_current_in, max_current_in, openloop_rpm, sl_erpm);
+//
+//			ind = 0;
+//			send_buffer[ind++] = COMM_DETECT_APPLY_ALL_FOC;
+//			buffer_append_int16(send_buffer, res, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_TERMINAL_CMD:
+//			data[len] = '\0';
+//			chMtxLock(&terminal_mutex);
+//			terminal_process_string((char*)data);
+//			chMtxUnlock(&terminal_mutex);
+//			break;
+//
+//		case COMM_PING_CAN: {
+//			int32_t ind = 0;
+//			send_buffer[ind++] = COMM_PING_CAN;
+//
+//			for (uint8_t i = 0;i < 255;i++) {
+//				HW_TYPE hw_type;
+//				if (comm_can_ping(i, &hw_type)) {
+//					send_buffer[ind++] = i;
+//				}
+//			}
+//
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//#if HAS_BLACKMAGIC
+//		case COMM_BM_CONNECT: {
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, bm_connect(), &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_ERASE_FLASH_ALL: {
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, bm_erase_flash_all(), &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_WRITE_FLASH_LZO:
+//		case COMM_BM_WRITE_FLASH: {
+//			if (packet_id == COMM_BM_WRITE_FLASH_LZO) {
+//				memcpy(send_buffer, data + 6, len - 6);
+//				int32_t ind = 4;
+//				lzo_uint decompressed_len = buffer_get_uint16(data, &ind);
+//				lzo1x_decompress_safe(send_buffer, len - 6, data + 4, &decompressed_len, NULL);
+//				len = decompressed_len + 4;
+//			}
+//
+//			int32_t ind = 0;
+//			uint32_t addr = buffer_get_uint32(data, &ind);
+//
+//			int res = bm_write_flash(addr, data + ind, len - ind);
+//
+//			ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, res, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_REBOOT: {
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, bm_reboot(), &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_HALT_REQ: {
+//			bm_halt_req();
+//
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_DISCONNECT: {
+//			bm_disconnect();
+//			bm_leave_nrf_debug_mode();
+//
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_MAP_PINS_DEFAULT: {
+//			bm_default_swd_pins();
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, 1, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_MAP_PINS_NRF5X: {
+//			int32_t ind = 0;
+//			send_buffer[ind++] = packet_id;
+//
+//#ifdef NRF5x_SWDIO_GPIO
+//			buffer_append_int16(send_buffer, 1, &ind);
+//			bm_change_swd_pins(NRF5x_SWDIO_GPIO, NRF5x_SWDIO_PIN,
+//					NRF5x_SWCLK_GPIO, NRF5x_SWCLK_PIN);
+//#else
+//			buffer_append_int16(send_buffer, 0, &ind);
+//#endif
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		case COMM_BM_MEM_READ: {
+//			int32_t ind = 0;
+//			uint32_t addr = buffer_get_uint32(data, &ind);
+//			uint16_t read_len = buffer_get_uint16(data, &ind);
+//
+//			if (read_len > sizeof(send_buffer) - 3) {
+//				read_len = sizeof(send_buffer) - 3;
+//			}
+//
+//			int res = bm_mem_read(addr, send_buffer + 3, read_len);
+//
+//			ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, res, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind + read_len);
+//			}
+//		} break;
+//
+//		case COMM_BM_MEM_WRITE: {
+//			int32_t ind = 0;
+//			uint32_t addr = buffer_get_uint32(data, &ind);
+//
+//			int res = bm_mem_write(addr, data + ind, len - ind);
+//
+//			ind = 0;
+//			send_buffer[ind++] = packet_id;
+//			buffer_append_int16(send_buffer, res, &ind);
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//#endif
+//		case COMM_GET_IMU_CALIBRATION: {
+//			int32_t ind = 0;
+//			float yaw = buffer_get_float32(data, 1e3, &ind);
+//			float imu_cal[9];
+//			imu_get_calibration(yaw, imu_cal);
+//
+//			ind = 0;
+//			send_buffer[ind++] = COMM_GET_IMU_CALIBRATION;
+//			buffer_append_float32(send_buffer, imu_cal[0], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[1], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[2], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[3], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[4], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[5], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[6], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[7], 1e6, &ind);
+//			buffer_append_float32(send_buffer, imu_cal[8], 1e6, &ind);
+//
+//			if (send_func_blocking) {
+//				send_func_blocking(send_buffer, ind);
+//			}
+//		} break;
+//
+//		default:
+//			break;
+//		}
+//	}
+//}

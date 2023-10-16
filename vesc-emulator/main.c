@@ -17,12 +17,12 @@ static const unsigned char bleTestFwId[6] = { 0x02, 0x01, 0x11, 0x02, 0x10, 0x03
 uint8_t bleTxBuf[512];  // REad characteristic is sent by VESC emulator and notified to the app
 
 
-static unsigned int write = 0;
+static unsigned int write_index = 0;
 static PACKET_STATE_t state;
 
 void send_packet(unsigned char *data, unsigned int len) {
-    memcpy(buffer + write, data, len);
-    write += len;
+    memcpy(buffer + write_index, data, len);
+    write_index += len;
 }
 
 void process_packet(unsigned char *data, unsigned int len) {
