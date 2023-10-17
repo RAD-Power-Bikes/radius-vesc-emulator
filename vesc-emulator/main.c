@@ -9,12 +9,14 @@
 #include "packet.h"
 #include "string.h"
 #include "vesc_interface.h"
-
-#define HW_NAME #define HW_NAME "RADIUS"
+#include "commands.h"
+#define READ_FW_ID_PACKET   0x01, 0x00
 
 static uint8_t buffer[250000];
-static const unsigned char bleTestFwId[6] = { 0x02, 0x01, 0x11, 0x02, 0x10, 0x03};  // Write characteristic is received by VESC emulator MTU is 512
-uint8_t bleTxBuf[512];  // REad characteristic is sent by VESC emulator and notified to the app
+unsigned char bleTestFwId[2] = { READ_FW_ID_PACKET};  // Write characteristic is received by VESC emulator MTU is 512
+
+
+unsigned char replyPacketBuf[512];  // REad characteristic is sent by VESC emulator and notified to the app
 
 
 static unsigned int write_index = 0;
@@ -25,8 +27,21 @@ void send_packet(unsigned char *data, unsigned int len) {
     write_index += len;
 }
 
+void reply_function(unsigned char * replyPacketBuf, unsigned int len) {
+    printf("reply packet: %d bytes\r\n", len);
+    for (int i = 0; i < len; i++)
+    {
+        printf("0x");
+        printf("%02X", replyPacketBuf[i]);
+        printf(",");
+    }
+    printf("\r");
+    
+}
+
 void process_packet(unsigned char *data, unsigned int len) {
-//    printf("Packet rx (%03d bytes): %s\r\n", len, (char*)data + rand_prepend);
+    printf("Packet rx (%03d bytes): %s\r\n", len, (char*)data);
+    commands_process_packet(data, len, reply_function);
 }
 
 int main(int argc, const char * argv[]) {

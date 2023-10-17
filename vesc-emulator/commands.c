@@ -176,15 +176,17 @@ void commands_send_packet_last_blocking(unsigned char *data, unsigned int len) {
 void commands_process_packet(unsigned char *data, unsigned int len,
                              void(*reply_func)(unsigned char *data, unsigned int len)) {
     
+    uint8_t packet_size;
     if (!len) {
         return;
     }
     
     COMM_PACKET_ID packet_id;
     
-    packet_id = data[0];
+    packet_size = data[0];
     data++;
     len--;
+    packet_id = data[0];
     
     // The NRF51 ESB implementation is treated like it has its own
     // independent communication interface.
@@ -216,7 +218,8 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             strcpy((char*)(send_buffer + ind), HW_NAME);
             ind += strlen(HW_NAME) + 1;
             
-            memcpy(send_buffer + ind, STM32_UUID_8, 12);
+            uint8_t stm32_fake_uuid[12] = { STM32_UUID_8 };
+            memcpy(send_buffer + ind, stm32_fake_uuid, 12);
             ind += 12;
             
             // Add 1 to the UUID for the second motor, so that configuration backup and
@@ -226,7 +229,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             //		}
             
 //            send_buffer[ind++] = app_get_configuration()->pairing_done;
-            send_buffer[ind++] = 0;
+            send_buffer[ind++] = 0; //fake out paiting
             send_buffer[ind++] = FW_TEST_VERSION_NUMBER;
             
             send_buffer[ind++] = HW_TYPE_VESC;
@@ -259,7 +262,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
 //            if (flash_helper_qmlui_data()) {
 //                send_buffer[ind++] = flash_helper_qmlui_flags();
 //            } else {
-//                send_buffer[ind++] = 0;
+                send_buffer[ind++] = 0; // required for packet size to be correct
 //            }
 #endif
             
