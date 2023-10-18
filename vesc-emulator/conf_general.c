@@ -277,7 +277,7 @@
  * @param conf
  * A pointer to a app_configuration struct to write the read configuration to.
  */
-//void conf_general_read_app_configuration(app_configuration *conf) {
+void conf_general_read_app_configuration(app_configuration *conf) {
 //	bool is_ok = true;
 //	uint8_t *conf_addr = (uint8_t*)conf;
 //	uint16_t var;
@@ -303,12 +303,12 @@
 //		f.fault = FAULT_CODE_FLASH_CORRUPTION_APP_CFG;
 //		terminal_add_fault_data(&f);
 //	}
-//
-//	// Set the default configuration
+
+	// Set the default configuration
 //	if (!is_ok) {
-//		confgenerator_set_defaults_appconf(conf);
+		confgenerator_set_defaults_appconf(conf);
 //	}
-//}
+}
 
 /**
  * Write app_configuration to EEPROM.

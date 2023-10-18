@@ -14,8 +14,10 @@
 #include<unistd.h>
 #include "mempools.h"
 #include "conf_general.h"
+#include "confgenerator.h"
 #include "appconf_default.h"
 #include "appconf_custom.h"
+#include "app.h"
 
 //#define HW_NAME "RADIUS"
 //

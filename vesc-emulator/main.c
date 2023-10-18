@@ -53,8 +53,8 @@ int main(int argc, const char * argv[]) {
    
 //        app_uartcomm_initialize();
         app_configuration *appconf = mempools_alloc_appconf();
-//        conf_general_read_app_configuration(appconf);
-//        app_set_configuration(appconf);
+        conf_general_read_app_configuration(appconf);
+        app_set_configuration(appconf);
 //        app_uartcomm_start(UART_PORT_BUILTIN);
 //        app_uartcomm_start(UART_PORT_EXTRA_HEADER);
 

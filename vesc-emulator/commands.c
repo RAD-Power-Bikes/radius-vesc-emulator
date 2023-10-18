@@ -613,23 +613,23 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             
         case COMM_GET_APPCONF:
         case COMM_GET_APPCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
-            //		app_configuration *appconf = mempools_alloc_appconf();
-            //
-            //		if (packet_id == COMM_GET_APPCONF) {
-            //			*appconf = *app_get_configuration();
-            //		} else {
-            //			confgenerator_set_defaults_appconf(appconf);
-            //		}
-            //
-            //#ifdef HW_HAS_DUAL_MOTORS
-            //		if (mc_interface_get_motor_thread() == 2) {
-            //			appconf->controller_id = utils_second_motor_id();
-            //		}
-            //#endif
-            //
-            //		commands_send_appconf(packet_id, appconf);
-            //
-            //		mempools_free_appconf(appconf);
+            		app_configuration *appconf = mempools_alloc_appconf();
+            
+            		if (packet_id == COMM_GET_APPCONF) {
+            			*appconf = *app_get_configuration();
+            		} else {
+            			confgenerator_set_defaults_appconf(appconf);
+            		}
+            
+            #ifdef HW_HAS_DUAL_MOTORS
+            		if (mc_interface_get_motor_thread() == 2) {
+            			appconf->controller_id = utils_second_motor_id();
+            		}
+            #endif
+            
+            		commands_send_appconf(packet_id, appconf);
+            
+            		mempools_free_appconf(appconf);
         } break;
             
         case COMM_SAMPLE_PRINT: { VESC_EMULATOR_NO_SUPPORT
@@ -1697,13 +1697,13 @@ void commands_send_gpd_buffer_notify(void) {
 //	chMtxUnlock(&send_buffer_mutex);
 //}
 //
-//void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
-//	chMtxLock(&send_buffer_mutex);
-//	send_buffer_global[0] = packet_id;
-//	int32_t len = confgenerator_serialize_appconf(send_buffer_global + 1, appconf);
-//	commands_send_packet(send_buffer_global, len + 1);
-//	chMtxUnlock(&send_buffer_mutex);
-//}
+void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
+	chMtxLock(&send_buffer_mutex);
+	send_buffer_global[0] = packet_id;
+	int32_t len = confgenerator_serialize_appconf(send_buffer_global + 1, appconf);
+	commands_send_packet(send_buffer_global, len + 1);
+	chMtxUnlock(&send_buffer_mutex);
+}
 //
 //inline static float hw_lim_upper(float l, float h) {(void)l; return h;}
 
