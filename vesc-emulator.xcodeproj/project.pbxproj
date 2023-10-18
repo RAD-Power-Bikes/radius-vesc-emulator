@@ -20,6 +20,7 @@
 		788D95502ADF395800EDB8C7 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D954E2ADF395800EDB8C7 /* utils.c */; };
 		788D95562AE065C100EDB8C7 /* app.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95542AE065C100EDB8C7 /* app.c */; };
 		788D955B2AE06E1800EDB8C7 /* hwconf in Sources */ = {isa = PBXBuildFile; fileRef = 788D955A2AE06D5800EDB8C7 /* hwconf */; };
+		788D95602AE07E0000EDB8C7 /* mc_interface.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D955F2AE07E0000EDB8C7 /* mc_interface.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -65,6 +66,8 @@
 		788D95542AE065C100EDB8C7 /* app.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = app.c; sourceTree = "<group>"; };
 		788D95552AE065C100EDB8C7 /* app.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = app.h; sourceTree = "<group>"; };
 		788D955A2AE06D5800EDB8C7 /* hwconf */ = {isa = PBXFileReference; lastKnownFileType = folder; path = hwconf; sourceTree = "<group>"; };
+		788D955E2AE07E0000EDB8C7 /* mc_interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mc_interface.h; sourceTree = "<group>"; };
+		788D955F2AE07E0000EDB8C7 /* mc_interface.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mc_interface.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +100,8 @@
 		788A1CAF2ADC5DD800CE6CB9 /* vesc-emulator */ = {
 			isa = PBXGroup;
 			children = (
+				788D955F2AE07E0000EDB8C7 /* mc_interface.c */,
+				788D955E2AE07E0000EDB8C7 /* mc_interface.h */,
 				788D955A2AE06D5800EDB8C7 /* hwconf */,
 				788D95542AE065C100EDB8C7 /* app.c */,
 				788D95552AE065C100EDB8C7 /* app.h */,
@@ -200,6 +205,7 @@
 				788D95492ADF0EA900EDB8C7 /* hw.c in Sources */,
 				788D95312ADD780A00EDB8C7 /* commands.c in Sources */,
 				788D95502ADF395800EDB8C7 /* utils.c in Sources */,
+				788D95602AE07E0000EDB8C7 /* mc_interface.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

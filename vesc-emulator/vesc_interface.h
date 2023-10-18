@@ -18,6 +18,7 @@
 #include "appconf_default.h"
 #include "appconf_custom.h"
 #include "app.h"
+#include "mc_interface.h"
 
 //#define HW_NAME "RADIUS"
 //

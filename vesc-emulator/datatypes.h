@@ -1302,30 +1302,30 @@ typedef struct {
 #define EEPROM_VARS_HW			64
 #define EEPROM_VARS_CUSTOM		64
 
-//typedef struct {
-//	float ah_tot;
-//	float ah_charge_tot;
-//	float wh_tot;
-//	float wh_charge_tot;
-//	float current_tot;
-//	float current_in_tot;
-//	uint8_t num_vescs;
-//} setup_values;
+typedef struct {
+	float ah_tot;
+	float ah_charge_tot;
+	float wh_tot;
+	float wh_charge_tot;
+	float current_tot;
+	float current_in_tot;
+	uint8_t num_vescs;
+} setup_values;
 
-//typedef struct {
-//	systime_t time_start;
-//	double samples;
-//	double speed_sum;
-//	float max_speed;
-//	double power_sum;
-//	float max_power;
-//	double temp_motor_sum;
-//	float max_temp_motor;
-//	double temp_mos_sum;
-//	float max_temp_mos;
-//	double current_sum;
-//	float max_current;
-//} setup_stats;
+typedef struct {
+	systime_t time_start;
+	double samples;
+	double speed_sum;
+	float max_speed;
+	double power_sum;
+	float max_power;
+	double temp_motor_sum;
+	float max_temp_motor;
+	double temp_mos_sum;
+	float max_temp_mos;
+	double current_sum;
+	float max_current;
+} setup_stats;
 
 #define BACKUP_VAR_INIT_CODE				92891934
 

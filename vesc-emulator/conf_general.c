@@ -388,8 +388,8 @@ void conf_general_read_app_configuration(app_configuration *conf) {
  * @param conf
  * A pointer to a mc_configuration struct to write the read configuration to.
  */
-//void conf_general_read_mc_configuration(mc_configuration *conf, bool is_motor_2) {
-//	bool is_ok = true;
+void conf_general_read_mc_configuration(mc_configuration *conf, bool is_motor_2) {
+	bool is_ok = true;
 //	uint8_t *conf_addr = (uint8_t*)conf;
 //	uint16_t var;
 //	unsigned int base = is_motor_2 ? EEPROM_BASE_MCCONF_2 : EEPROM_BASE_MCCONF;
@@ -415,11 +415,11 @@ void conf_general_read_app_configuration(app_configuration *conf) {
 //		f.fault = FAULT_CODE_FLASH_CORRUPTION_MC_CFG;
 //		terminal_add_fault_data(&f);
 //	}
-//
-//	if (!is_ok) {
-//		confgenerator_set_defaults_mcconf(conf);
-//	}
-//}
+    is_ok = false;  // force defaults for radius POC
+	if (!is_ok) {
+		confgenerator_set_defaults_mcconf(conf);
+	}
+}
 
 /**
  * Write mc_configuration to EEPROM.

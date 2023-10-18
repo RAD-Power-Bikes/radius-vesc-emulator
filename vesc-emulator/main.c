@@ -49,6 +49,7 @@ int main(int argc, const char * argv[]) {
     printf("VESC Emulator Starting!\n");
     
     // Initialization code frm VESC bldc main
+    mc_interface_init();
     commands_init();
    
 //        app_uartcomm_initialize();
