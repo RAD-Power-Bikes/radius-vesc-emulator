@@ -13,6 +13,13 @@
 		788D95362ADD84D700EDB8C7 /* packet.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95352ADD84D700EDB8C7 /* packet.c */; };
 		788D95382ADD88F000EDB8C7 /* vesc_interface.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95372ADD88F000EDB8C7 /* vesc_interface.c */; };
 		788D953B2ADDC0A300EDB8C7 /* buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D953A2ADDC0A300EDB8C7 /* buffer.c */; };
+		788D95402ADF01DA00EDB8C7 /* confgenerator.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D953D2ADF01DA00EDB8C7 /* confgenerator.c */; };
+		788D95412ADF01DA00EDB8C7 /* conf_general.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D953F2ADF01DA00EDB8C7 /* conf_general.c */; };
+		788D95462ADF0B4A00EDB8C7 /* mempools.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95442ADF0B4900EDB8C7 /* mempools.c */; };
+		788D95492ADF0EA900EDB8C7 /* hw.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95472ADF0EA900EDB8C7 /* hw.c */; };
+		788D95502ADF395800EDB8C7 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D954E2ADF395800EDB8C7 /* utils.c */; };
+		788D95562AE065C100EDB8C7 /* app.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95542AE065C100EDB8C7 /* app.c */; };
+		788D955B2AE06E1800EDB8C7 /* hwconf in Sources */ = {isa = PBXBuildFile; fileRef = 788D955A2AE06D5800EDB8C7 /* hwconf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -41,6 +48,23 @@
 		788D95372ADD88F000EDB8C7 /* vesc_interface.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = vesc_interface.c; sourceTree = "<group>"; };
 		788D95392ADDC0A300EDB8C7 /* buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buffer.h; sourceTree = "<group>"; };
 		788D953A2ADDC0A300EDB8C7 /* buffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = buffer.c; sourceTree = "<group>"; };
+		788D953C2ADF01D900EDB8C7 /* conf_general.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = conf_general.h; sourceTree = "<group>"; };
+		788D953D2ADF01DA00EDB8C7 /* confgenerator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = confgenerator.c; sourceTree = "<group>"; };
+		788D953E2ADF01DA00EDB8C7 /* confgenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = confgenerator.h; sourceTree = "<group>"; };
+		788D953F2ADF01DA00EDB8C7 /* conf_general.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = conf_general.c; sourceTree = "<group>"; };
+		788D95442ADF0B4900EDB8C7 /* mempools.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mempools.c; sourceTree = "<group>"; };
+		788D95452ADF0B4900EDB8C7 /* mempools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mempools.h; sourceTree = "<group>"; };
+		788D95472ADF0EA900EDB8C7 /* hw.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hw.c; sourceTree = "<group>"; };
+		788D95482ADF0EA900EDB8C7 /* hw.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hw.h; sourceTree = "<group>"; };
+		788D954A2ADF34CB00EDB8C7 /* appconf_custom.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = appconf_custom.h; sourceTree = "<group>"; };
+		788D954B2ADF34D000EDB8C7 /* appconf_default.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = appconf_default.h; sourceTree = "<group>"; };
+		788D954C2ADF350200EDB8C7 /* mcconf_default.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mcconf_default.h; sourceTree = "<group>"; };
+		788D954D2ADF395800EDB8C7 /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		788D954E2ADF395800EDB8C7 /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = utils.c; sourceTree = "<group>"; };
+		788D954F2ADF395800EDB8C7 /* stm32f4xx_conf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = stm32f4xx_conf.h; sourceTree = "<group>"; };
+		788D95542AE065C100EDB8C7 /* app.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = app.c; sourceTree = "<group>"; };
+		788D95552AE065C100EDB8C7 /* app.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = app.h; sourceTree = "<group>"; };
+		788D955A2AE06D5800EDB8C7 /* hwconf */ = {isa = PBXFileReference; lastKnownFileType = folder; path = hwconf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,11 +97,28 @@
 		788A1CAF2ADC5DD800CE6CB9 /* vesc-emulator */ = {
 			isa = PBXGroup;
 			children = (
+				788D955A2AE06D5800EDB8C7 /* hwconf */,
+				788D95542AE065C100EDB8C7 /* app.c */,
+				788D95552AE065C100EDB8C7 /* app.h */,
+				788D954F2ADF395800EDB8C7 /* stm32f4xx_conf.h */,
+				788D954E2ADF395800EDB8C7 /* utils.c */,
+				788D954D2ADF395800EDB8C7 /* utils.h */,
+				788D954C2ADF350200EDB8C7 /* mcconf_default.h */,
+				788D954B2ADF34D000EDB8C7 /* appconf_default.h */,
+				788D954A2ADF34CB00EDB8C7 /* appconf_custom.h */,
+				788D95472ADF0EA900EDB8C7 /* hw.c */,
+				788D95482ADF0EA900EDB8C7 /* hw.h */,
+				788D953F2ADF01DA00EDB8C7 /* conf_general.c */,
+				788D953C2ADF01D900EDB8C7 /* conf_general.h */,
+				788D953D2ADF01DA00EDB8C7 /* confgenerator.c */,
+				788D953E2ADF01DA00EDB8C7 /* confgenerator.h */,
 				788D953A2ADDC0A300EDB8C7 /* buffer.c */,
 				788D95392ADDC0A300EDB8C7 /* buffer.h */,
 				788D95352ADD84D700EDB8C7 /* packet.c */,
 				788D95342ADD84D700EDB8C7 /* packet.h */,
 				788A1CB02ADC5DD800CE6CB9 /* main.c */,
+				788D95442ADF0B4900EDB8C7 /* mempools.c */,
+				788D95452ADF0B4900EDB8C7 /* mempools.h */,
 				788D952C2ADD780A00EDB8C7 /* commands.c */,
 				788D952E2ADD780A00EDB8C7 /* commands.h */,
 				788D952B2ADD780A00EDB8C7 /* crc.c */,
@@ -146,12 +187,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				788D955B2AE06E1800EDB8C7 /* hwconf in Sources */,
 				788D95302ADD780A00EDB8C7 /* crc.c in Sources */,
 				788D953B2ADDC0A300EDB8C7 /* buffer.c in Sources */,
+				788D95462ADF0B4A00EDB8C7 /* mempools.c in Sources */,
+				788D95412ADF01DA00EDB8C7 /* conf_general.c in Sources */,
 				788D95382ADD88F000EDB8C7 /* vesc_interface.c in Sources */,
 				788D95362ADD84D700EDB8C7 /* packet.c in Sources */,
+				788D95402ADF01DA00EDB8C7 /* confgenerator.c in Sources */,
+				788D95562AE065C100EDB8C7 /* app.c in Sources */,
 				788A1CB12ADC5DD800CE6CB9 /* main.c in Sources */,
+				788D95492ADF0EA900EDB8C7 /* hw.c in Sources */,
 				788D95312ADD780A00EDB8C7 /* commands.c in Sources */,
+				788D95502ADF395800EDB8C7 /* utils.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
