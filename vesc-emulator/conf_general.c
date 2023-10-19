@@ -50,6 +50,8 @@
 #define EEPROM_BASE_MCCONF_2	5000
 #define EEPROM_BASE_BACKUP		6000
 
+const uint8_t stm32_fake_uuid[12] = { STM32_UUID_8 };
+
 //// Global variables
 //uint16_t VirtAddVarTab[NB_OF_VAR];
 //bool conf_general_permanent_nrf_found = false;

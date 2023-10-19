@@ -26,6 +26,7 @@
 // Set to 0 for building a release and iterate during beta test builds
 #define FW_TEST_VERSION_NUMBER		0
 
+
 #include "datatypes.h"
 
 // Settings and parameters to override
@@ -319,8 +320,12 @@
  * MCU
  */
 #define SYSTEM_CORE_CLOCK			168000000
-#define STM32_UUID					((uint32_t*)0x1FFF7A10)
-#define STM32_UUID_8				((uint8_t*)0x1FFF7A10)
+//#define STM32_UUID					((uint32_t*)0x1FFF7A10)
+//#define STM32_UUID_8				((uint8_t*)0x1FFF7A10)
+
+// For radius.  UUID must be stored somewhere other than fixed address used with STM MCU
+#define STM32_UUID_8                0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40  // required for build.  Identifies MCU type to VESC client
+extern const uint8_t stm32_fake_uuid[12];
 
 /*
  *	Run the BLDC speed controller in current mode instead of duty cycle mode. This will

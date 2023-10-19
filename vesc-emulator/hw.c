@@ -22,8 +22,12 @@
 #include <math.h>
 #include HW_SOURCE
 
+//#define STM32_UUID_8                0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40  // required for build.  Identifies MCU type to VESC client
+//uint8_t stm32_fake_uuid[12] = { STM32_UUID_8 };
+
+
 uint8_t hw_id_from_uuid(void) {
-	uint8_t id = utils_crc32c(STM32_UUID_8, 12) & 0x7F;
+	uint8_t id = utils_crc32c(stm32_fake_uuid, 12) & 0x7F;
 	// CAN ID 10 and 11 are often used by DieBieMS / FlexiBMS
 	uint8_t reserved[] = {10, 11};
 	for (size_t i = 0; i < sizeof(reserved); ++i) {

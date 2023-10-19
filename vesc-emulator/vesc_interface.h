@@ -27,7 +27,7 @@
 //#define FW_VERSION_MINOR            03
 //// Set to 0 for building a release and iterate during beta test builds
 //#define FW_TEST_VERSION_NUMBER        0
-#define STM32_UUID_8                0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40  // required for build.  Identifies MCU type to VESC client
+//#define STM32_UUID_8                0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40  // required for build.  Identifies MCU type to VESC client
 
 // chbios entities converted to c
 #define mutex_t pthread_mutex_t

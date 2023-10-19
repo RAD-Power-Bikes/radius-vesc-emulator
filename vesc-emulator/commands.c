@@ -218,7 +218,6 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             strcpy((char*)(send_buffer + ind), HW_NAME);
             ind += strlen(HW_NAME) + 1;
             
-            uint8_t stm32_fake_uuid[12] = { STM32_UUID_8 };
             memcpy(send_buffer + ind, stm32_fake_uuid, 12);
             ind += 12;
             
@@ -557,28 +556,28 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             
         case COMM_GET_MCCONF:
         case COMM_GET_MCCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
-            //		mc_configuration *mcconf = mempools_alloc_mcconf();
-            //
-            //		if (packet_id == COMM_GET_MCCONF) {
-            //			*mcconf = *mc_interface_get_configuration();
-            //		} else {
-            //			confgenerator_set_defaults_mcconf(mcconf);
-            //			volatile const mc_configuration *mcconf_now = mc_interface_get_configuration();
-            //
-            //			// Keep the old offsets
-            //			mcconf->foc_offsets_current[0] = mcconf_now->foc_offsets_current[0];
-            //			mcconf->foc_offsets_current[1] = mcconf_now->foc_offsets_current[1];
-            //			mcconf->foc_offsets_current[2] = mcconf_now->foc_offsets_current[2];
-            //			mcconf->foc_offsets_voltage[0] = mcconf_now->foc_offsets_voltage[0];
-            //			mcconf->foc_offsets_voltage[1] = mcconf_now->foc_offsets_voltage[1];
-            //			mcconf->foc_offsets_voltage[2] = mcconf_now->foc_offsets_voltage[2];
-            //			mcconf->foc_offsets_voltage_undriven[0] = mcconf_now->foc_offsets_voltage_undriven[0];
-            //			mcconf->foc_offsets_voltage_undriven[1] = mcconf_now->foc_offsets_voltage_undriven[1];
-            //			mcconf->foc_offsets_voltage_undriven[2] = mcconf_now->foc_offsets_voltage_undriven[2];
-            //		}
-            //
-            //		commands_send_mcconf(packet_id, mcconf);
-            //		mempools_free_mcconf(mcconf);
+            		mc_configuration *mcconf = mempools_alloc_mcconf();
+            
+            		if (packet_id == COMM_GET_MCCONF) {
+            			*mcconf = *mc_interface_get_configuration();
+            		} else {
+            			confgenerator_set_defaults_mcconf(mcconf);
+            			volatile const mc_configuration *mcconf_now = mc_interface_get_configuration();
+            
+            			// Keep the old offsets
+            			mcconf->foc_offsets_current[0] = mcconf_now->foc_offsets_current[0];
+            			mcconf->foc_offsets_current[1] = mcconf_now->foc_offsets_current[1];
+            			mcconf->foc_offsets_current[2] = mcconf_now->foc_offsets_current[2];
+            			mcconf->foc_offsets_voltage[0] = mcconf_now->foc_offsets_voltage[0];
+            			mcconf->foc_offsets_voltage[1] = mcconf_now->foc_offsets_voltage[1];
+            			mcconf->foc_offsets_voltage[2] = mcconf_now->foc_offsets_voltage[2];
+            			mcconf->foc_offsets_voltage_undriven[0] = mcconf_now->foc_offsets_voltage_undriven[0];
+            			mcconf->foc_offsets_voltage_undriven[1] = mcconf_now->foc_offsets_voltage_undriven[1];
+            			mcconf->foc_offsets_voltage_undriven[2] = mcconf_now->foc_offsets_voltage_undriven[2];
+            		}
+            
+            		commands_send_mcconf(packet_id, mcconf);
+            		mempools_free_mcconf(mcconf);
         } break;
             
         case COMM_SET_APPCONF: { VESC_EMULATOR_NO_SUPPORT
@@ -1689,14 +1688,14 @@ void commands_send_gpd_buffer_notify(void) {
 	commands_send_packet(buffer, index);
 }
 
-//void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf) {
-//	chMtxLock(&send_buffer_mutex);
-//	send_buffer_global[0] = packet_id;
-//	int32_t len = confgenerator_serialize_mcconf(send_buffer_global + 1, mcconf);
-//	commands_send_packet(send_buffer_global, len + 1);
-//	chMtxUnlock(&send_buffer_mutex);
-//}
-//
+void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf) {
+	chMtxLock(&send_buffer_mutex);
+	send_buffer_global[0] = packet_id;
+	int32_t len = confgenerator_serialize_mcconf(send_buffer_global + 1, mcconf);
+	commands_send_packet(send_buffer_global, len + 1);
+	chMtxUnlock(&send_buffer_mutex);
+}
+
 void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
 	chMtxLock(&send_buffer_mutex);
 	send_buffer_global[0] = packet_id;

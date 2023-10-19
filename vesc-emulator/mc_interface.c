@@ -328,10 +328,10 @@ int mc_interface_motor_now(void) {
 //	return chThdGetSelfX()->motor_selected;
 //}
 //
-//const volatile mc_configuration* mc_interface_get_configuration(void) {
-//	return &motor_now()->m_conf;
-//}
-//
+const volatile mc_configuration* mc_interface_get_configuration(void) {
+	return &motor_now()->m_conf;
+}
+
 //void mc_interface_set_configuration(mc_configuration *configuration) {
 //	volatile motor_if_state_t *motor = motor_now();
 //
@@ -2326,13 +2326,13 @@ int mc_interface_motor_now(void) {
 //	conf->lo_current_motor_min_now = conf->lo_current_min;
 //}
 //
-//static volatile motor_if_state_t *motor_now(void) {
-//#ifdef HW_HAS_DUAL_MOTORS
-//	return mc_interface_motor_now() == 1 ? &m_motor_1 : &m_motor_2;
-//#else
-//	return &m_motor_1;
-//#endif
-//}
+static volatile motor_if_state_t *motor_now(void) {
+#ifdef HW_HAS_DUAL_MOTORS
+	return mc_interface_motor_now() == 1 ? &m_motor_1 : &m_motor_2;
+#else
+	return &m_motor_1;
+#endif
+}
 //
 //static void run_timer_tasks(volatile motor_if_state_t *motor) {
 //	bool is_motor_1 = motor == &m_motor_1;
