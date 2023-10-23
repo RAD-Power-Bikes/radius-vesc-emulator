@@ -138,39 +138,9 @@ int main(int argc, const char * argv[]) {
     // Initialization code frm VESC bldc main
     mc_interface_init();
     commands_init();
-   
-//        app_uartcomm_initialize();
-        app_configuration *appconf = mempools_alloc_appconf();
-        conf_general_read_app_configuration(appconf);
-        app_set_configuration(appconf);
-//        app_uartcomm_start(UART_PORT_BUILTIN);
-//        app_uartcomm_start(UART_PORT_EXTRA_HEADER);
-
-//    #ifdef HW_HAS_PERMANENT_NRF
-//        conf_general_permanent_nrf_found = nrf_driver_init();
-//        if (conf_general_permanent_nrf_found) {
-//            rfhelp_restart();
-//        } else {
-//            nrf_driver_stop();
-//            // Set the nrf SPI pins to the general SPI interface so that
-//            // an external NRF can be used with the NRF app.
-//            spi_sw_change_pins(
-//                    HW_SPI_PORT_NSS, HW_SPI_PIN_NSS,
-//                    HW_SPI_PORT_SCK, HW_SPI_PIN_SCK,
-//                    HW_SPI_PORT_MOSI, HW_SPI_PIN_MOSI,
-//                    HW_SPI_PORT_MISO, HW_SPI_PIN_MISO);
-//            HW_PERMANENT_NRF_FAILED_HOOK();
-//        }
-//    #endif
-
-        // Threads
-//        chThdCreateStatic(led_thread_wa, sizeof(led_thread_wa), NORMALPRIO, led_thread, NULL);
-//        chThdCreateStatic(periodic_thread_wa, sizeof(periodic_thread_wa), NORMALPRIO, periodic_thread, NULL);
-//        chThdCreateStatic(flash_integrity_check_thread_wa, sizeof(flash_integrity_check_thread_wa), LOWPRIO, flash_integrity_check_thread, NULL);
-
-//        timeout_init();
-//        timeout_configure(appconf->timeout_msec, appconf->timeout_brake_current, appconf->kill_sw_mode);
-
+    app_configuration *appconf = mempools_alloc_appconf();
+    conf_general_read_app_configuration(appconf);
+    app_set_configuration(appconf);
     mempools_free_appconf(appconf);
     
     packet_init(send_packet, process_packet, &state);
