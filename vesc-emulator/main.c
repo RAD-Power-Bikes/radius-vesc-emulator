@@ -35,22 +35,31 @@ unsigned char replyPacketBuf[512];  // Read characteristic is sent by VESC emula
 static unsigned int write_index = 0;
 static PACKET_STATE_t state;
 
+void dump_buffer(unsigned char* buf, unsigned int len);
+
 void send_packet(unsigned char *data, unsigned int len) {
+    dump_buffer(data, len);
     memcpy(buffer + write_index, data, len);
     write_index += len;
 }
 
 void reply_function(unsigned char * replyPacketBuf, unsigned int len) {
+    dump_buffer(replyPacketBuf, len);
+    packet_send_packet(replyPacketBuf, len, &state);
+
+}
+
+void dump_buffer(unsigned char* buf, unsigned int len) {
     printf("reply packet: %d bytes\r\n", len);
     for (int i = 0; i < len; i++)
     {
         printf("0x");
-        printf("%02X", replyPacketBuf[i]);
+        printf("%02X", buf[i]);
         printf(",");
     }
     printf("\r");
-    
 }
+
 
 void process_packet(unsigned char *data, unsigned int len) {
     
