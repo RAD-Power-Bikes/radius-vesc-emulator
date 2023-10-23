@@ -175,17 +175,15 @@ void commands_send_packet_last_blocking(unsigned char *data, unsigned int len) {
  */
 void commands_process_packet(unsigned char *data, unsigned int len,
                              void(*reply_func)(unsigned char *data, unsigned int len)) {
-    
-    uint8_t packet_size;
-    if (!len) {
+        if (!len) {
         return;
     }
     
     COMM_PACKET_ID packet_id;
     
-    packet_size = data[0];
-    data++;
-    len--;
+//    packet_size = data[0];
+//    data++;
+//    len--;
     packet_id = data[0];
     
     // The NRF51 ESB implementation is treated like it has its own
@@ -218,7 +216,6 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             strcpy((char*)(send_buffer + ind), HW_NAME);
             ind += strlen(HW_NAME) + 1;
             
-            uint8_t stm32_fake_uuid[12] = { STM32_UUID_8 };
             memcpy(send_buffer + ind, stm32_fake_uuid, 12);
             ind += 12;
             
@@ -556,29 +553,29 @@ void commands_process_packet(unsigned char *data, unsigned int len,
         } break;
             
         case COMM_GET_MCCONF:
-        case COMM_GET_MCCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
-            //		mc_configuration *mcconf = mempools_alloc_mcconf();
-            //
-            //		if (packet_id == COMM_GET_MCCONF) {
-            //			*mcconf = *mc_interface_get_configuration();
-            //		} else {
-            //			confgenerator_set_defaults_mcconf(mcconf);
-            //			volatile const mc_configuration *mcconf_now = mc_interface_get_configuration();
-            //
-            //			// Keep the old offsets
-            //			mcconf->foc_offsets_current[0] = mcconf_now->foc_offsets_current[0];
-            //			mcconf->foc_offsets_current[1] = mcconf_now->foc_offsets_current[1];
-            //			mcconf->foc_offsets_current[2] = mcconf_now->foc_offsets_current[2];
-            //			mcconf->foc_offsets_voltage[0] = mcconf_now->foc_offsets_voltage[0];
-            //			mcconf->foc_offsets_voltage[1] = mcconf_now->foc_offsets_voltage[1];
-            //			mcconf->foc_offsets_voltage[2] = mcconf_now->foc_offsets_voltage[2];
-            //			mcconf->foc_offsets_voltage_undriven[0] = mcconf_now->foc_offsets_voltage_undriven[0];
-            //			mcconf->foc_offsets_voltage_undriven[1] = mcconf_now->foc_offsets_voltage_undriven[1];
-            //			mcconf->foc_offsets_voltage_undriven[2] = mcconf_now->foc_offsets_voltage_undriven[2];
-            //		}
-            //
-            //		commands_send_mcconf(packet_id, mcconf);
-            //		mempools_free_mcconf(mcconf);
+        case COMM_GET_MCCONF_DEFAULT: {
+            		mc_configuration *mcconf = mempools_alloc_mcconf();
+            
+            		if (packet_id == COMM_GET_MCCONF) {
+            			*mcconf = *mc_interface_get_configuration();
+            		} else {
+            			confgenerator_set_defaults_mcconf(mcconf);
+            			volatile const mc_configuration *mcconf_now = mc_interface_get_configuration();
+            
+            			// Keep the old offsets
+            			mcconf->foc_offsets_current[0] = mcconf_now->foc_offsets_current[0];
+            			mcconf->foc_offsets_current[1] = mcconf_now->foc_offsets_current[1];
+            			mcconf->foc_offsets_current[2] = mcconf_now->foc_offsets_current[2];
+            			mcconf->foc_offsets_voltage[0] = mcconf_now->foc_offsets_voltage[0];
+            			mcconf->foc_offsets_voltage[1] = mcconf_now->foc_offsets_voltage[1];
+            			mcconf->foc_offsets_voltage[2] = mcconf_now->foc_offsets_voltage[2];
+            			mcconf->foc_offsets_voltage_undriven[0] = mcconf_now->foc_offsets_voltage_undriven[0];
+            			mcconf->foc_offsets_voltage_undriven[1] = mcconf_now->foc_offsets_voltage_undriven[1];
+            			mcconf->foc_offsets_voltage_undriven[2] = mcconf_now->foc_offsets_voltage_undriven[2];
+            		}
+            
+            		commands_send_mcconf(packet_id, mcconf);
+            		mempools_free_mcconf(mcconf);
         } break;
             
         case COMM_SET_APPCONF: { VESC_EMULATOR_NO_SUPPORT
@@ -613,23 +610,23 @@ void commands_process_packet(unsigned char *data, unsigned int len,
             
         case COMM_GET_APPCONF:
         case COMM_GET_APPCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
-            //		app_configuration *appconf = mempools_alloc_appconf();
-            //
-            //		if (packet_id == COMM_GET_APPCONF) {
-            //			*appconf = *app_get_configuration();
-            //		} else {
-            //			confgenerator_set_defaults_appconf(appconf);
-            //		}
-            //
-            //#ifdef HW_HAS_DUAL_MOTORS
-            //		if (mc_interface_get_motor_thread() == 2) {
-            //			appconf->controller_id = utils_second_motor_id();
-            //		}
-            //#endif
-            //
-            //		commands_send_appconf(packet_id, appconf);
-            //
-            //		mempools_free_appconf(appconf);
+            		app_configuration *appconf = mempools_alloc_appconf();
+            
+            		if (packet_id == COMM_GET_APPCONF) {
+            			*appconf = *app_get_configuration();
+            		} else {
+            			confgenerator_set_defaults_appconf(appconf);
+            		}
+            
+            #ifdef HW_HAS_DUAL_MOTORS
+            		if (mc_interface_get_motor_thread() == 2) {
+            			appconf->controller_id = utils_second_motor_id();
+            		}
+            #endif
+            
+            		commands_send_appconf(packet_id, appconf);
+            
+            		mempools_free_appconf(appconf);
         } break;
             
         case COMM_SAMPLE_PRINT: { VESC_EMULATOR_NO_SUPPORT
@@ -1689,21 +1686,21 @@ void commands_send_gpd_buffer_notify(void) {
 	commands_send_packet(buffer, index);
 }
 
-//void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf) {
-//	chMtxLock(&send_buffer_mutex);
-//	send_buffer_global[0] = packet_id;
-//	int32_t len = confgenerator_serialize_mcconf(send_buffer_global + 1, mcconf);
-//	commands_send_packet(send_buffer_global, len + 1);
-//	chMtxUnlock(&send_buffer_mutex);
-//}
-//
-//void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
-//	chMtxLock(&send_buffer_mutex);
-//	send_buffer_global[0] = packet_id;
-//	int32_t len = confgenerator_serialize_appconf(send_buffer_global + 1, appconf);
-//	commands_send_packet(send_buffer_global, len + 1);
-//	chMtxUnlock(&send_buffer_mutex);
-//}
+void commands_send_mcconf(COMM_PACKET_ID packet_id, mc_configuration *mcconf) {
+	chMtxLock(&send_buffer_mutex);
+	send_buffer_global[0] = packet_id;
+	int32_t len = confgenerator_serialize_mcconf(send_buffer_global + 1, mcconf);
+	commands_send_packet(send_buffer_global, len + 1);
+	chMtxUnlock(&send_buffer_mutex);
+}
+
+void commands_send_appconf(COMM_PACKET_ID packet_id, app_configuration *appconf) {
+	chMtxLock(&send_buffer_mutex);
+	send_buffer_global[0] = packet_id;
+	int32_t len = confgenerator_serialize_appconf(send_buffer_global + 1, appconf);
+	commands_send_packet(send_buffer_global, len + 1);
+	chMtxUnlock(&send_buffer_mutex);
+}
 //
 //inline static float hw_lim_upper(float l, float h) {(void)l; return h;}
 
