@@ -14,8 +14,8 @@
             filePath = "vesc-emulator/commands.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "210"
-            endingLineNumber = "210"
+            startingLineNumber = "208"
+            endingLineNumber = "208"
             landmarkName = "commands_process_packet(data, len)"
             landmarkType = "9">
             <Locations>
@@ -49,6 +49,21 @@
                   endingLineNumber = "210"
                   offsetFromSymbolStart = "224">
                </Location>
+               <Location
+                  uuid = "4CB62ADD-EDFC-46EC-8F0A-777B1F3569A2 - c23b8839e6c87bc3"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "commands_process_packet"
+                  moduleName = "vesc-emulator"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/commands.c"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "208"
+                  endingLineNumber = "208"
+                  offsetFromSymbolStart = "224">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
@@ -62,8 +77,8 @@
             filePath = "vesc-emulator/main.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "100"
-            endingLineNumber = "100"
+            startingLineNumber = "129"
+            endingLineNumber = "129"
             landmarkName = "main(argc, argv)"
             landmarkType = "9">
             <Locations>
@@ -110,8 +125,8 @@
             filePath = "vesc-emulator/main.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "41"
-            endingLineNumber = "41"
+            startingLineNumber = "44"
+            endingLineNumber = "44"
             landmarkName = "reply_function(replyPacketBuf, len)"
             landmarkType = "9">
             <Locations>
@@ -158,8 +173,8 @@
             filePath = "vesc-emulator/main.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "48"
-            endingLineNumber = "48"
+            startingLineNumber = "51"
+            endingLineNumber = "51"
             landmarkName = "reply_function(replyPacketBuf, len)"
             landmarkType = "9">
             <Locations>
@@ -222,9 +237,9 @@
             filePath = "vesc-emulator/main.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "52"
-            endingLineNumber = "52"
-            landmarkName = "process_packet(data)"
+            startingLineNumber = "57"
+            endingLineNumber = "57"
+            landmarkName = "process_packet(data, len)"
             landmarkType = "9">
             <Locations>
                <Location
@@ -257,104 +272,8 @@
                   endingLineNumber = "53"
                   offsetFromSymbolStart = "16">
                </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "BC29DCCA-65D3-4429-8CF9-C5CBE866DD97"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "vesc-emulator/main.c"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "75"
-            endingLineNumber = "75"
-            landmarkName = "process_packet(data)"
-            landmarkType = "9">
-            <Locations>
                <Location
-                  uuid = "BC29DCCA-65D3-4429-8CF9-C5CBE866DD97 - 5bd5f952706ec801"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "process_packet"
-                  moduleName = "vesc-emulator"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73"
-                  offsetFromSymbolStart = "212">
-               </Location>
-               <Location
-                  uuid = "BC29DCCA-65D3-4429-8CF9-C5CBE866DD97 - 5bd5f952706ec801"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "process_packet"
-                  moduleName = "vesc-emulator"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "73"
-                  endingLineNumber = "73"
-                  offsetFromSymbolStart = "148">
-               </Location>
-               <Location
-                  uuid = "BC29DCCA-65D3-4429-8CF9-C5CBE866DD97 - 5bd5f952706ec862"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "process_packet"
-                  moduleName = "vesc-emulator"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "74"
-                  endingLineNumber = "74"
-                  offsetFromSymbolStart = "168">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "24E2FBD4-23E0-400E-A594-BD560536230F"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "vesc-emulator/main.c"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "82"
-            endingLineNumber = "82"
-            landmarkName = "process_packet(data)"
-            landmarkType = "9">
-            <Locations>
-               <Location
-                  uuid = "24E2FBD4-23E0-400E-A594-BD560536230F - 5bd5f952706ec909"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "process_packet"
-                  moduleName = "vesc-emulator"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "81"
-                  endingLineNumber = "81"
-                  offsetFromSymbolStart = "256">
-               </Location>
-               <Location
-                  uuid = "24E2FBD4-23E0-400E-A594-BD560536230F - 5bd5f952706ec909"
+                  uuid = "E89B4D67-EF08-494A-B3ED-70BB8862DD46 - 5bd5f952706eca11"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
@@ -364,9 +283,9 @@
                   urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "81"
-                  endingLineNumber = "81"
-                  offsetFromSymbolStart = "232">
+                  startingLineNumber = "57"
+                  endingLineNumber = "57"
+                  offsetFromSymbolStart = "20">
                </Location>
             </Locations>
          </BreakpointContent>
@@ -374,49 +293,33 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F24B9CFC-14B6-4D03-A223-83772E562528"
+            uuid = "EE67C637-E4E1-4165-9E9E-41312DB05F9E"
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "vesc-emulator/main.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "83"
-            endingLineNumber = "83"
-            landmarkName = "process_packet(data)"
+            startingLineNumber = "55"
+            endingLineNumber = "55"
+            landmarkName = "process_packet(data, len)"
             landmarkType = "9">
-            <Locations>
-               <Location
-                  uuid = "F24B9CFC-14B6-4D03-A223-83772E562528 - 5bd5f952706ec94b"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "process_packet"
-                  moduleName = "vesc-emulator"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "83"
-                  endingLineNumber = "83"
-                  offsetFromSymbolStart = "284">
-               </Location>
-               <Location
-                  uuid = "F24B9CFC-14B6-4D03-A223-83772E562528 - 5bd5f952706ec94b"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "process_packet"
-                  moduleName = "vesc-emulator"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/rglntz/git/vesc-emulator/vesc-emulator/main.c"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "83"
-                  endingLineNumber = "83"
-                  offsetFromSymbolStart = "260">
-               </Location>
-            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "CA1A0681-6464-48B3-8E0A-6C9FFCB68B0E"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "vesc-emulator/main.c"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "93"
+            endingLineNumber = "93"
+            landmarkName = "process_packet(data, len)"
+            landmarkType = "9">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

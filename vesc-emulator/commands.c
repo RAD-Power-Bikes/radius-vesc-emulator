@@ -175,9 +175,7 @@ void commands_send_packet_last_blocking(unsigned char *data, unsigned int len) {
  */
 void commands_process_packet(unsigned char *data, unsigned int len,
                              void(*reply_func)(unsigned char *data, unsigned int len)) {
-    
-    uint8_t packet_size;
-    if (!len) {
+        if (!len) {
         return;
     }
     

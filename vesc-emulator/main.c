@@ -17,9 +17,12 @@
 #define GET_APPCONF_PACKET   0x02, 0x01, 0x11, 0x02, 0x10, 0x03
 #define VESC_SHORT_PACKET_START_BYTE    0x02
 #define VESC_LONG_PACKET_START_BYTE     0x03
-#define CRC16_LENGTH    2
+#define VESC_PACKET_OVERHEAD_LENGTH 5   // start (1), short packet length (1), crc (2), stop (1)
+#define CRC16_LENGTH
+#define COMMAND_CODE_LENGTH
 #define START_OF_DATA_INDEX 2
-#define START_OF_CRC_INDEX  
+#define START_OF_CRC_INDEX
+#define MAX_PACKET_LENGTH 512
 
 
 static uint8_t buffer[250000];
@@ -49,7 +52,7 @@ void reply_function(unsigned char * replyPacketBuf, unsigned int len) {
     
 }
 
-void process_packet(unsigned char *data) {
+void process_packet(unsigned char *data, unsigned int len) {
     
     uint16_t payload_length = 0;
     uint16_t checksum = 0;
@@ -67,32 +70,56 @@ void process_packet(unsigned char *data) {
             long_packet = 1;
             break;
         default:
+            printf("RECEIVED PACKET ERROR: Invalid start byte: %0x \r\n", *data);
             payload_length = 0;
             error = -1;
     }
     
-    // Verify stop byte
-    if ( !error) {
-        if (*(data + START_OF_DATA_INDEX +  payload_length + long_packet + CRC16_LENGTH) != 0x03 ) {
+    // Check for full packet received
+    if (!error) {
+        if (len < payload_length + VESC_PACKET_OVERHEAD_LENGTH + long_packet)  {
+            printf("RECEIVED PACKET ERROR: Incomplete\r\n");
+            error = -2;
+        }
+    }
+    // Sanity check the length - packet too large
+    if (!error) {
+        if ( (payload_length + VESC_PACKET_OVERHEAD_LENGTH ) > MAX_PACKET_LENGTH) {
+            printf("RECEIVED PACKET ERROR: Decoded payload length too large: %0x\r\n", payload_length);
             error = -1;
         }
     }
+        
+    // Verify stop byte
+        if (!error) {
+            if ( (*(data + payload_length+ VESC_PACKET_OVERHEAD_LENGTH + long_packet -1) != 0x03 ) ) {
+                printf("RECEIVED PACKET ERROR: Valid stop byte not found\r\n");
+                error = -1;
+            }
+        }
     
     // Validate checksum
-    checksum = crc16(data + START_OF_DATA_INDEX + long_packet, payload_length);
-    found_checksum = (uint8_t) (*(data + long_packet + START_OF_DATA_INDEX + 1)) << 8;
-    found_checksum = found_checksum + ((uint8_t) *(data + long_packet + START_OF_DATA_INDEX + 2));
-    if (checksum ==  found_checksum){
-            printf("Packet rx %d bytes:\r\n", payload_length);
-            for (int i = 0; i < payload_length + long_packet + 3; i++)
-            {
-                printf("0x");
-                printf("%02X", data[i]);
-                printf(",");
-            }
-            printf("\r");
-        commands_process_packet(&data[START_OF_DATA_INDEX+long_packet], payload_length, reply_function);
+    if (!error) {
+        checksum = crc16(data + START_OF_DATA_INDEX + long_packet, payload_length);
+        found_checksum = (uint8_t) (*(data + long_packet + START_OF_DATA_INDEX + 1)) << 8;
+        found_checksum = found_checksum + ((uint8_t) *(data + long_packet + START_OF_DATA_INDEX + 2));
+        if (checksum ==  found_checksum){
+                printf("Packet rx %d bytes:\r\n", payload_length);
+                for (int i = 0; i < payload_length + long_packet + 3; i++)
+                {
+                    printf("0x");
+                    printf("%02X", data[i]);
+                    printf(",");
+                }
+                printf("\r");
+            commands_process_packet(&data[START_OF_DATA_INDEX+long_packet], payload_length, reply_function);
+        }
+        else {
+            error = -3;
+            printf("RECEIVED PACKET ERROR: Bad checksum\r\n");
+        }
     }
+    
 }
 
 int main(int argc, const char * argv[]) {
@@ -138,7 +165,7 @@ int main(int argc, const char * argv[]) {
     mempools_free_appconf(appconf);
     
     packet_init(send_packet, process_packet, &state);
-    process_packet(bleTestPacket);
+    process_packet(bleTestPacket, sizeof(bleTestPacket));
     
     
     return 0;
