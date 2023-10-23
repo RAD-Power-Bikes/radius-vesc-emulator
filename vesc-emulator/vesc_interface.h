@@ -34,5 +34,6 @@
 #define chMtxLock pthread_mutex_lock
 #define chMtxUnlock pthread_mutex_unlock
 #define chMtxObjectInit(a)  pthread_mutex_init(a,NULL)
+void vesc_emul(void);
 
 #endif /* vesc_interface_h */
