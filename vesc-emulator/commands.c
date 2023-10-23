@@ -183,9 +183,9 @@ void commands_process_packet(unsigned char *data, unsigned int len,
     
     COMM_PACKET_ID packet_id;
     
-    packet_size = data[0];
-    data++;
-    len--;
+//    packet_size = data[0];
+//    data++;
+//    len--;
     packet_id = data[0];
     
     // The NRF51 ESB implementation is treated like it has its own
@@ -555,7 +555,7 @@ void commands_process_packet(unsigned char *data, unsigned int len,
         } break;
             
         case COMM_GET_MCCONF:
-        case COMM_GET_MCCONF_DEFAULT: { VESC_EMULATOR_NO_SUPPORT
+        case COMM_GET_MCCONF_DEFAULT: {
             		mc_configuration *mcconf = mempools_alloc_mcconf();
             
             		if (packet_id == COMM_GET_MCCONF) {

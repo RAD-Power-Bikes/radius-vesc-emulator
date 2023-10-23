@@ -10,13 +10,23 @@
 #include "string.h"
 #include "vesc_interface.h"
 #include "commands.h"
-#define READ_FW_ID_PACKET   0x01, 0x00
+#include "crc.h"
+#define INITIALIZATION_PACKET   0x01, 0x00
+#define READ_FW_ID_PACKET    0x02, 0x01, 0x00, 0x00, 0x00, 0x03
+#define GET_MCCONF_PACKET    0x02, 0x01, 0x0e, 0xe1, 0xce, 0x03
+#define GET_APPCONF_PACKET   0x02, 0x01, 0x11, 0x02, 0x10, 0x03
+#define VESC_SHORT_PACKET_START_BYTE    0x02
+#define VESC_LONG_PACKET_START_BYTE     0x03
+#define CRC16_LENGTH    2
+#define START_OF_DATA_INDEX 2
+#define START_OF_CRC_INDEX  
+
 
 static uint8_t buffer[250000];
-unsigned char bleTestFwId[2] = { READ_FW_ID_PACKET};  // Write characteristic is received by VESC emulator MTU is 512
+unsigned char bleTestPacket[6] = { GET_MCCONF_PACKET };  // Write characteristic is received by VESC emulator MTU is 512
 
 
-unsigned char replyPacketBuf[512];  // REad characteristic is sent by VESC emulator and notified to the app
+unsigned char replyPacketBuf[512];  // Read characteristic is sent by VESC emulator and notified to the app
 
 
 static unsigned int write_index = 0;
@@ -39,9 +49,50 @@ void reply_function(unsigned char * replyPacketBuf, unsigned int len) {
     
 }
 
-void process_packet(unsigned char *data, unsigned int len) {
-    printf("Packet rx (%03d bytes): %s\r\n", len, (char*)data);
-    commands_process_packet(data, len, reply_function);
+void process_packet(unsigned char *data) {
+    
+    uint16_t payload_length = 0;
+    uint16_t checksum = 0;
+    uint16_t found_checksum = 0;
+    uint8_t error = 0;
+    uint8_t long_packet = 0;
+    
+    // Get payload_lengthgth of packet
+    switch (*data) {
+        case VESC_SHORT_PACKET_START_BYTE:  // short pcaket start byte
+            payload_length = data[1];
+            break;
+        case VESC_LONG_PACKET_START_BYTE: // long packet (greater than 255 bytes)
+            payload_length = (data[1] * 256) + data[2];
+            long_packet = 1;
+            break;
+        default:
+            payload_length = 0;
+            error = -1;
+    }
+    
+    // Verify stop byte
+    if ( !error) {
+        if (*(data + START_OF_DATA_INDEX +  payload_length + long_packet + CRC16_LENGTH) != 0x03 ) {
+            error = -1;
+        }
+    }
+    
+    // Validate checksum
+    checksum = crc16(data + START_OF_DATA_INDEX + long_packet, payload_length);
+    found_checksum = (uint8_t) (*(data + long_packet + START_OF_DATA_INDEX + 1)) << 8;
+    found_checksum = found_checksum + ((uint8_t) *(data + long_packet + START_OF_DATA_INDEX + 2));
+    if (checksum ==  found_checksum){
+            printf("Packet rx %d bytes:\r\n", payload_length);
+            for (int i = 0; i < payload_length + long_packet + 3; i++)
+            {
+                printf("0x");
+                printf("%02X", data[i]);
+                printf(",");
+            }
+            printf("\r");
+        commands_process_packet(&data[START_OF_DATA_INDEX+long_packet], payload_length, reply_function);
+    }
 }
 
 int main(int argc, const char * argv[]) {
@@ -84,10 +135,10 @@ int main(int argc, const char * argv[]) {
 //        timeout_init();
 //        timeout_configure(appconf->timeout_msec, appconf->timeout_brake_current, appconf->kill_sw_mode);
 
-        mempools_free_appconf(appconf);
+    mempools_free_appconf(appconf);
     
     packet_init(send_packet, process_packet, &state);
-    process_packet(bleTestFwId, sizeof(bleTestFwId));
+    process_packet(bleTestPacket);
     
     
     return 0;

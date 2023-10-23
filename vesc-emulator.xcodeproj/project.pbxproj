@@ -21,6 +21,7 @@
 		788D95562AE065C100EDB8C7 /* app.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95542AE065C100EDB8C7 /* app.c */; };
 		788D955B2AE06E1800EDB8C7 /* hwconf in Sources */ = {isa = PBXBuildFile; fileRef = 788D955A2AE06D5800EDB8C7 /* hwconf */; };
 		788D95602AE07E0000EDB8C7 /* mc_interface.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D955F2AE07E0000EDB8C7 /* mc_interface.c */; };
+		788D95632AE18D2500EDB8C7 /* rfhelp.c in Sources */ = {isa = PBXBuildFile; fileRef = 788D95612AE18D2400EDB8C7 /* rfhelp.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -68,6 +69,8 @@
 		788D955A2AE06D5800EDB8C7 /* hwconf */ = {isa = PBXFileReference; lastKnownFileType = folder; path = hwconf; sourceTree = "<group>"; };
 		788D955E2AE07E0000EDB8C7 /* mc_interface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mc_interface.h; sourceTree = "<group>"; };
 		788D955F2AE07E0000EDB8C7 /* mc_interface.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mc_interface.c; sourceTree = "<group>"; };
+		788D95612AE18D2400EDB8C7 /* rfhelp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rfhelp.c; sourceTree = "<group>"; };
+		788D95622AE18D2400EDB8C7 /* rfhelp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rfhelp.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,6 +103,7 @@
 		788A1CAF2ADC5DD800CE6CB9 /* vesc-emulator */ = {
 			isa = PBXGroup;
 			children = (
+				788D95642AE18D3100EDB8C7 /* nrf */,
 				788D955F2AE07E0000EDB8C7 /* mc_interface.c */,
 				788D955E2AE07E0000EDB8C7 /* mc_interface.h */,
 				788D955A2AE06D5800EDB8C7 /* hwconf */,
@@ -133,6 +137,15 @@
 				788D95372ADD88F000EDB8C7 /* vesc_interface.c */,
 			);
 			path = "vesc-emulator";
+			sourceTree = "<group>";
+		};
+		788D95642AE18D3100EDB8C7 /* nrf */ = {
+			isa = PBXGroup;
+			children = (
+				788D95612AE18D2400EDB8C7 /* rfhelp.c */,
+				788D95622AE18D2400EDB8C7 /* rfhelp.h */,
+			);
+			path = nrf;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -196,6 +209,7 @@
 				788D95302ADD780A00EDB8C7 /* crc.c in Sources */,
 				788D953B2ADDC0A300EDB8C7 /* buffer.c in Sources */,
 				788D95462ADF0B4A00EDB8C7 /* mempools.c in Sources */,
+				788D95632AE18D2500EDB8C7 /* rfhelp.c in Sources */,
 				788D95412ADF01DA00EDB8C7 /* conf_general.c in Sources */,
 				788D95382ADD88F000EDB8C7 /* vesc_interface.c in Sources */,
 				788D95362ADD84D700EDB8C7 /* packet.c in Sources */,
