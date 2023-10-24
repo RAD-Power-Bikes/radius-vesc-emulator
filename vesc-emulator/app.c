@@ -26,16 +26,17 @@
 //#include "comm_can.h"
 //#include "imu.h"
 #include "crc.h"
+#include "stddef.h"
 //#include "servo_simple.h"
 
 // Private variables
 static app_configuration appconf;
 //static virtual_timer_t output_vt;
-static bool output_vt_init_done = false;
+//static bool output_vt_init_done = false;
 static volatile bool output_disabled_now = false;
 
 // Private functions
-static void output_vt_cb(void *arg);
+//static void output_vt_cb(void *arg);
 
 const app_configuration* app_get_configuration(void) {
 	return &appconf;
@@ -191,10 +192,10 @@ bool app_is_output_disabled(void) {
 	return output_disabled_now;
 }
 
-static void output_vt_cb(void *arg) {
-	(void)arg;
-	output_disabled_now = false;
-}
+//static void output_vt_cb(void *arg) {
+//	(void)arg;
+//	output_disabled_now = false;
+//}
 
 /**
  * Get app_configuration CRC

@@ -21,6 +21,6 @@
 #define APPCONF_APPCONF_EXAMPLE_PPM_H_
 
 // Use custom user application
-#define APPCONF_APP_TO_USE				APP_CUSTOM
+//#define APPCONF_APP_TO_USE				APP_CUSTOM
 
 #endif

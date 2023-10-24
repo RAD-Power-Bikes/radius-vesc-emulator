@@ -56,6 +56,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #define VESC_EMULATOR_NO_SUPPORT   printf("Unsupported command type\n %0x", packet_id);
 
@@ -70,10 +71,10 @@
 
 // Private variables
 static uint8_t send_buffer_global[PACKET_MAX_PL_LEN];
-static uint8_t blocking_thread_cmd_buffer[PACKET_MAX_PL_LEN];
-static volatile unsigned int blocking_thread_cmd_len = 0;
-static volatile bool is_blocking = false;
-static volatile int blocking_thread_motor = 1;
+//static uint8_t blocking_thread_cmd_buffer[PACKET_MAX_PL_LEN];
+//static volatile unsigned int blocking_thread_cmd_len = 0;
+//static volatile bool is_blocking = false;
+//static volatile int blocking_thread_motor = 1;
 static void(* volatile send_func)(unsigned char *data, unsigned int len) = 0;
 static void(* volatile send_func_blocking)(unsigned char *data, unsigned int len) = 0;
 static void(* volatile send_func_nrf)(unsigned char *data, unsigned int len) = 0;

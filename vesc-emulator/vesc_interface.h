@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include<pthread.h>
 #include<stdlib.h>
+#include <stdint.h>
 #include<unistd.h>
 #include "mempools.h"
 #include "conf_general.h"

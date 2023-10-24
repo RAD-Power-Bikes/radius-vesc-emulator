@@ -21,6 +21,7 @@
 #define HW_H_
 
 #include "stm32f4xx_conf.h"
+#include "vesc_interface.h"
 #include HW_HEADER
 
 #ifdef HW_HAS_DRV8301

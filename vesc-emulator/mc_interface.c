@@ -119,17 +119,17 @@ static volatile int m_sample_now;
 static volatile int m_sample_trigger;
 static volatile float m_last_adc_duration_sample;
 static volatile bool m_sample_is_second_motor;
-static volatile mc_fault_code m_fault_stop_fault;
-static volatile bool m_fault_stop_is_second_motor;
+//static volatile mc_fault_code m_fault_stop_fault;
+//static volatile bool m_fault_stop_is_second_motor;
 
 // Private functions
-static void update_override_limits(volatile motor_if_state_t *motor, volatile mc_configuration *conf);
-static void run_timer_tasks(volatile motor_if_state_t *motor);
-static void update_stats(volatile motor_if_state_t *motor);
+//static void update_override_limits(volatile motor_if_state_t *motor, volatile mc_configuration *conf);
+//static void run_timer_tasks(volatile motor_if_state_t *motor);
+//static void update_stats(volatile motor_if_state_t *motor);
 static volatile motor_if_state_t *motor_now(void);
 
 // Function pointers
-static void(*pwn_done_func)(void) = 0;
+//static void(*pwn_done_func)(void) = 0;
 
 // Threads
 //static THD_WORKING_AREA(timer_thread_wa, 1024);
