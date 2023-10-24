@@ -27,7 +27,8 @@
 #define MAX_PACKET_LENGTH 512
 
 
-static uint8_t buffer[250000];
+//static uint8_t buffer[250000];
+static uint8_t buffer[2048]; // todo: BG NOTE:  bldc had huge buffer allocated. Probably for OTA of the VESC firmware.
 unsigned char bleTestPacket[6] = { GET_MCCONF_PACKET };  // Write characteristic is received by VESC emulator MTU is 512
 
 
@@ -39,7 +40,7 @@ static PACKET_STATE_t state;
 
 void dump_buffer(unsigned char* buf, unsigned int len);
 
-void send_packet(unsigned char *data, unsigned int len) {
+void send_packet_ble(unsigned char *data, unsigned int len) {
     dump_buffer(data, len);
     memcpy(buffer + write_index, data, len);
     write_index += len;
@@ -145,7 +146,7 @@ void vesc_emul(void){
     app_set_configuration(appconf);
     mempools_free_appconf(appconf);
     
-    packet_init(send_packet, process_packet, &state);
+    packet_init(send_packet_ble, process_packet, &state);
     process_packet(bleTestPacket, sizeof(bleTestPacket));
     
     

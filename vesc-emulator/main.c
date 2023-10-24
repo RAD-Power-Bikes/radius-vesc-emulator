@@ -131,6 +131,7 @@
 //    
 //}
 
+#ifndef ESP_PLATFORM
 int main(int argc, const char * argv[]) {
     vesc_emul();
 //    // insert code here...    // insert code here...
@@ -150,3 +151,4 @@ int main(int argc, const char * argv[]) {
 //    
     return 0;
 }
+#endif
