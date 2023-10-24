@@ -56,7 +56,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdint.h>
 
 #define VESC_EMULATOR_NO_SUPPORT   printf("Unsupported command type\n %0x", packet_id);
 
