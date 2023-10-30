@@ -535,11 +535,11 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //void mc_interface_lock_override_once(void) {
 //	motor_now()->m_lock_override_once = true;
 //}
-//
-//mc_fault_code mc_interface_get_fault(void) {
-//	return motor_now()->m_fault_now;
-//}
-//
+
+mc_fault_code mc_interface_get_fault(void) {
+	return motor_now()->m_fault_now;
+}
+
 //const char* mc_interface_fault_to_string(mc_fault_code fault) {
 //	switch (fault) {
 //	case FAULT_CODE_NONE: return "FAULT_CODE_NONE"; break;
@@ -930,11 +930,11 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //
 //	return DIR_MULT * ret;
 //}
-//
-//float mc_interface_get_duty_cycle_now(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+float mc_interface_get_duty_cycle_now(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_duty_cycle_now();
@@ -943,14 +943,14 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_duty_cycle_now();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return DIR_MULT * ret;
-//}
-//
+
+	default:
+		break;
+	}
+
+	return DIR_MULT * ret;
+}
+
 //float mc_interface_get_sampling_frequency_now(void) {
 //	float ret = 0.0;
 //
@@ -974,11 +974,11 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //
 //	return ret;
 //}
-//
-//float mc_interface_get_rpm(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+float mc_interface_get_rpm(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_rpm();
@@ -987,90 +987,90 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_rpm();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return DIR_MULT * ret;
-//}
-//
-///**
-// * Get the amount of amp hours drawn from the input source.
-// *
-// * @param reset
-// * If true, the counter will be reset after this call.
-// *
-// * @return
-// * The amount of amp hours drawn.
-// */
-//float mc_interface_get_amp_hours(bool reset) {
-//	float val = motor_now()->m_amp_seconds / 3600;
-//
-//	if (reset) {
-//		motor_now()->m_amp_seconds = 0.0;
-//	}
-//
-//	return val;
-//}
-//
-///**
-// * Get the amount of amp hours fed back into the input source.
-// *
-// * @param reset
-// * If true, the counter will be reset after this call.
-// *
-// * @return
-// * The amount of amp hours fed back.
-// */
-//float mc_interface_get_amp_hours_charged(bool reset) {
-//	float val = motor_now()->m_amp_seconds_charged / 3600;
-//
-//	if (reset) {
-//		motor_now()->m_amp_seconds_charged = 0.0;
-//	}
-//
-//	return val;
-//}
-//
-///**
-// * Get the amount of watt hours drawn from the input source.
-// *
-// * @param reset
-// * If true, the counter will be reset after this call.
-// *
-// * @return
-// * The amount of watt hours drawn.
-// */
-//float mc_interface_get_watt_hours(bool reset) {
-//	float val = motor_now()->m_watt_seconds / 3600;
-//
-//	if (reset) {
-//		motor_now()->m_watt_seconds = 0.0;
-//	}
-//
-//	return val;
-//}
-//
-///**
-// * Get the amount of watt hours fed back into the input source.
-// *
-// * @param reset
-// * If true, the counter will be reset after this call.
-// *
-// * @return
-// * The amount of watt hours fed back.
-// */
-//float mc_interface_get_watt_hours_charged(bool reset) {
-//	float val = motor_now()->m_watt_seconds_charged / 3600;
-//
-//	if (reset) {
-//		motor_now()->m_watt_seconds_charged = 0.0;
-//	}
-//
-//	return val;
-//}
-//
+
+	default:
+		break;
+	}
+
+	return DIR_MULT * ret;
+}
+
+/**
+ * Get the amount of amp hours drawn from the input source.
+ *
+ * @param reset
+ * If true, the counter will be reset after this call.
+ *
+ * @return
+ * The amount of amp hours drawn.
+ */
+float mc_interface_get_amp_hours(bool reset) {
+	float val = motor_now()->m_amp_seconds / 3600;
+
+	if (reset) {
+		motor_now()->m_amp_seconds = 0.0;
+	}
+
+	return val;
+}
+
+/**
+ * Get the amount of amp hours fed back into the input source.
+ *
+ * @param reset
+ * If true, the counter will be reset after this call.
+ *
+ * @return
+ * The amount of amp hours fed back.
+ */
+float mc_interface_get_amp_hours_charged(bool reset) {
+	float val = motor_now()->m_amp_seconds_charged / 3600;
+
+	if (reset) {
+		motor_now()->m_amp_seconds_charged = 0.0;
+	}
+
+	return val;
+}
+
+/**
+ * Get the amount of watt hours drawn from the input source.
+ *
+ * @param reset
+ * If true, the counter will be reset after this call.
+ *
+ * @return
+ * The amount of watt hours drawn.
+ */
+float mc_interface_get_watt_hours(bool reset) {
+	float val = motor_now()->m_watt_seconds / 3600;
+
+	if (reset) {
+		motor_now()->m_watt_seconds = 0.0;
+	}
+
+	return val;
+}
+
+/**
+ * Get the amount of watt hours fed back into the input source.
+ *
+ * @param reset
+ * If true, the counter will be reset after this call.
+ *
+ * @return
+ * The amount of watt hours fed back.
+ */
+float mc_interface_get_watt_hours_charged(bool reset) {
+	float val = motor_now()->m_watt_seconds_charged / 3600;
+
+	if (reset) {
+		motor_now()->m_watt_seconds_charged = 0.0;
+	}
+
+	return val;
+}
+
 //float mc_interface_get_tot_current(void) {
 //	float ret = 0.0;
 //
@@ -1190,16 +1190,16 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //
 //	return ret;
 //}
-//
-//float mc_interface_get_input_voltage_filtered(void) {
-//	return motor_now()->m_input_voltage_filtered;
-//}
-//
-//float mc_interface_get_abs_motor_current_unbalance(void) {
-//	float ret = 0.0;
-//
-//#ifdef HW_HAS_3_SHUNTS
-//	switch (motor_now()->m_conf.motor_type) {
+
+float mc_interface_get_input_voltage_filtered(void) {
+	return motor_now()->m_input_voltage_filtered;
+}
+
+float mc_interface_get_abs_motor_current_unbalance(void) {
+	float ret = 0.0;
+
+#ifdef HW_HAS_3_SHUNTS
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		break;
@@ -1207,14 +1207,14 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_abs_motor_current_unbalance();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//#endif
-//	return ret;
-//}
-//
+
+	default:
+		break;
+	}
+#endif
+	return ret;
+}
+
 //int mc_interface_set_tachometer_value(int steps) {
 //	int ret = 0;
 //	switch (motor_now()->m_conf.motor_type) {
@@ -1233,11 +1233,11 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //
 //	return DIR_MULT * ret;
 //}
-//
-//int mc_interface_get_tachometer_value(bool reset) {
-//	int ret = 0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+int mc_interface_get_tachometer_value(bool reset) {
+	int ret = 0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tachometer_value(reset);
@@ -1246,18 +1246,18 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tachometer_value(reset);
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return DIR_MULT * ret;
-//}
-//
-//int mc_interface_get_tachometer_abs_value(bool reset) {
-//	int ret = 0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+	default:
+		break;
+	}
+
+	return DIR_MULT * ret;
+}
+
+int mc_interface_get_tachometer_abs_value(bool reset) {
+	int ret = 0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tachometer_abs_value(reset);
@@ -1266,14 +1266,14 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tachometer_abs_value(reset);
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return ret;
-//}
-//
+
+	default:
+		break;
+	}
+
+	return ret;
+}
+
 //float mc_interface_get_last_inj_adc_isr_duration(void) {
 //	float ret = 0.0;
 //
@@ -1297,91 +1297,91 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //
 //	return ret;
 //}
-//
-//float mc_interface_read_reset_avg_motor_current(void) {
+
+float mc_interface_read_reset_avg_motor_current(void) {
 //	if (motor_now()->m_conf.motor_type == MOTOR_TYPE_GPD) {
 //		return gpdrive_get_current_filtered();
 //	}
-//
-//	float res = motor_now()->m_motor_current_sum / motor_now()->m_motor_current_iterations;
-//	motor_now()->m_motor_current_sum = 0.0;
-//	motor_now()->m_motor_current_iterations = 0.0;
-//	return res;
-//}
-//
-//float mc_interface_read_reset_avg_input_current(void) {
+
+	float res = motor_now()->m_motor_current_sum / motor_now()->m_motor_current_iterations;
+	motor_now()->m_motor_current_sum = 0.0;
+	motor_now()->m_motor_current_iterations = 0.0;
+	return res;
+}
+
+float mc_interface_read_reset_avg_input_current(void) {
 //	if (motor_now()->m_conf.motor_type == MOTOR_TYPE_GPD) {
 //		return gpdrive_get_current_filtered() * gpdrive_get_modulation();
 //	}
-//
-//	float res = motor_now()->m_input_current_sum / motor_now()->m_input_current_iterations;
-//	motor_now()->m_input_current_sum = 0.0;
-//	motor_now()->m_input_current_iterations = 0.0;
-//	return res;
-//}
-//
-///**
-// * Read and reset the average direct axis motor current. (FOC only)
-// *
-// * @return
-// * The average D axis current.
-// */
-//float mc_interface_read_reset_avg_id(void) {
-//	float res = motor_now()->m_motor_id_sum / motor_now()->m_motor_id_iterations;
-//	motor_now()->m_motor_id_sum = 0.0;
-//	motor_now()->m_motor_id_iterations = 0.0;
-//	return res;
-//}
-//
-///**
-// * Read and reset the average quadrature axis motor current. (FOC only)
-// *
-// * @return
-// * The average Q axis current.
-// */
-//float mc_interface_read_reset_avg_iq(void) {
-//	float res = motor_now()->m_motor_iq_sum / motor_now()->m_motor_iq_iterations;
-//	motor_now()->m_motor_iq_sum = 0.0;
-//	motor_now()->m_motor_iq_iterations = 0.0;
-//	return DIR_MULT * res;
-//}
-//
-///**
-// * Read and reset the average direct axis motor voltage. (FOC only)
-// *
-// * @return
-// * The average D axis voltage.
-// */
-//float mc_interface_read_reset_avg_vd(void) {
-//	float res = motor_now()->m_motor_vd_sum / motor_now()->m_motor_vd_iterations;
-//	motor_now()->m_motor_vd_sum = 0.0;
-//	motor_now()->m_motor_vd_iterations = 0.0;
-//	return res;
-//}
-//
-///**
-// * Read and reset the average quadrature axis motor voltage. (FOC only)
-// *
-// * @return
-// * The average Q axis voltage.
-// */
-//float mc_interface_read_reset_avg_vq(void) {
-//	float res = motor_now()->m_motor_vq_sum / motor_now()->m_motor_vq_iterations;
-//	motor_now()->m_motor_vq_sum = 0.0;
-//	motor_now()->m_motor_vq_iterations = 0.0;
-//	return DIR_MULT * res;
-//}
-//
+
+	float res = motor_now()->m_input_current_sum / motor_now()->m_input_current_iterations;
+	motor_now()->m_input_current_sum = 0.0;
+	motor_now()->m_input_current_iterations = 0.0;
+	return res;
+}
+
+/**
+ * Read and reset the average direct axis motor current. (FOC only)
+ *
+ * @return
+ * The average D axis current.
+ */
+float mc_interface_read_reset_avg_id(void) {
+	float res = motor_now()->m_motor_id_sum / motor_now()->m_motor_id_iterations;
+	motor_now()->m_motor_id_sum = 0.0;
+	motor_now()->m_motor_id_iterations = 0.0;
+	return res;
+}
+
+/**
+ * Read and reset the average quadrature axis motor current. (FOC only)
+ *
+ * @return
+ * The average Q axis current.
+ */
+float mc_interface_read_reset_avg_iq(void) {
+	float res = motor_now()->m_motor_iq_sum / motor_now()->m_motor_iq_iterations;
+	motor_now()->m_motor_iq_sum = 0.0;
+	motor_now()->m_motor_iq_iterations = 0.0;
+	return DIR_MULT * res;
+}
+
+/**
+ * Read and reset the average direct axis motor voltage. (FOC only)
+ *
+ * @return
+ * The average D axis voltage.
+ */
+float mc_interface_read_reset_avg_vd(void) {
+	float res = motor_now()->m_motor_vd_sum / motor_now()->m_motor_vd_iterations;
+	motor_now()->m_motor_vd_sum = 0.0;
+	motor_now()->m_motor_vd_iterations = 0.0;
+	return res;
+}
+
+/**
+ * Read and reset the average quadrature axis motor voltage. (FOC only)
+ *
+ * @return
+ * The average Q axis voltage.
+ */
+float mc_interface_read_reset_avg_vq(void) {
+	float res = motor_now()->m_motor_vq_sum / motor_now()->m_motor_vq_iterations;
+	motor_now()->m_motor_vq_sum = 0.0;
+	motor_now()->m_motor_vq_iterations = 0.0;
+	return DIR_MULT * res;
+}
+
 //float mc_interface_get_pid_pos_set(void) {
 //	return motor_now()->m_position_set;
 //}
-//
-//float mc_interface_get_pid_pos_now(void) {
-//	float ret = 0.0;
-//
-//	volatile mc_configuration *conf = &motor_now()->m_conf;
-//
-//	switch (conf->motor_type) {
+
+float mc_interface_get_pid_pos_now(void) {
+	float ret = 0.0;
+
+	volatile mc_configuration *conf = &motor_now()->m_conf;
+
+	switch (conf->motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = encoder_read_deg();
@@ -1390,24 +1390,24 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_pid_pos_now();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
+
+	default:
+		break;
+	}
+
 //	if (encoder_is_configured()) {
 //		if (conf->foc_encoder_inverted) {
 //			ret *= -1.0;
 //		}
 //	}
-//
-//	ret *= DIR_MULT;
-//	ret -= motor_now()->m_conf.p_pid_offset;
-//	utils_norm_angle(&ret);
-//
-//	return ret;
-//}
-//
+
+	ret *= DIR_MULT;
+	ret -= motor_now()->m_conf.p_pid_offset;
+	utils_norm_angle(&ret);
+
+	return ret;
+}
+
 ///**
 // * Update the offset such that the current angle becomes angle_now
 // */
@@ -1451,85 +1451,86 @@ const volatile mc_configuration* mc_interface_get_configuration(void) {
 //	}
 //}
 //
-///**
-// * Get filtered MOSFET temperature. The temperature is pre-calculated, so this
-// * functions is fast.
-// *
-// * @return
-// * The filtered MOSFET temperature.
-// */
-//float mc_interface_temp_fet_filtered(void) {
-//	return motor_now()->m_temp_fet;
-//}
-//
-///**
-// * Get filtered motor temperature. The temperature is pre-calculated, so this
-// * functions is fast.
-// *
-// * @return
-// * The filtered motor temperature.
-// */
-//float mc_interface_temp_motor_filtered(void) {
-//	return motor_now()->m_temp_motor;
-//}
-//
-///**
-// * Get the battery level, based on battery settings in configuration. Notice that
-// * this function is based on remaining watt hours, and not amp hours.
-// *
-// * @param wh_left
-// * Pointer to where to store the remaining watt hours, can be null.
-// *
-// * @return
-// * Battery level, range 0 to 1
-// */
-//float mc_interface_get_battery_level(float *wh_left) {
-//	const volatile mc_configuration *conf = mc_interface_get_configuration();
-//	const float v_in = motor_now()->m_input_voltage_filtered_slower;
-//	float battery_avg_voltage = 0.0;
-//	float battery_avg_voltage_left = 0.0;
-//	float ah_left = 0;
-//	float ah_tot = conf->si_battery_ah;
-//
-//	switch (conf->si_battery_type) {
-//	case BATTERY_TYPE_LIION_3_0__4_2:
-//		battery_avg_voltage = ((3.2 + 4.2) / 2.0) * (float)(conf->si_battery_cells);
-//		battery_avg_voltage_left = ((3.2 * (float)(conf->si_battery_cells) + v_in) / 2.0);
-//		float batt_left = utils_map(v_in / (float)(conf->si_battery_cells),
-//									3.2, 4.2, 0.0, 1.0);
-//		batt_left = utils_batt_liion_norm_v_to_capacity(batt_left);
-//		ah_tot *= 0.85; // 0.85 because the battery is not fully depleted at 3.2V / cell
-//		ah_left = batt_left * ah_tot;
-//		break;
-//
-//	case BATTERY_TYPE_LIIRON_2_6__3_6:
-//		battery_avg_voltage = ((2.8 + 3.6) / 2.0) * (float)(conf->si_battery_cells);
-//		battery_avg_voltage_left = ((2.8 * (float)(conf->si_battery_cells) + v_in) / 2.0);
-//		ah_left = utils_map(v_in / (float)(conf->si_battery_cells),
-//				2.6, 3.6, 0.0, conf->si_battery_ah);
-//		break;
-//
-//	case BATTERY_TYPE_LEAD_ACID:
-//		// TODO: This does not really work for lead-acid batteries
-//		battery_avg_voltage = ((2.1 + 2.36) / 2.0) * (float)(conf->si_battery_cells);
-//		battery_avg_voltage_left = ((2.1 * (float)(conf->si_battery_cells) + v_in) / 2.0);
-//		ah_left = utils_map(v_in / (float)(conf->si_battery_cells),
-//				2.1, 2.36, 0.0, conf->si_battery_ah);
-//		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	const float wh_batt_tot = ah_tot * battery_avg_voltage;
-//	const float wh_batt_left = ah_left * battery_avg_voltage_left;
-//
-//	if (wh_left) {
-//		*wh_left = wh_batt_left;
-//	}
-//
-//	return wh_batt_left / wh_batt_tot;
-//}
+/**
+ * Get filtered MOSFET temperature. The temperature is pre-calculated, so this
+ * functions is fast.
+ *
+ * @return
+ * The filtered MOSFET temperature.
+ */
+float mc_interface_temp_fet_filtered(void) {
+    return 0;
+	return motor_now()->m_temp_fet;
+}
+
+/**
+ * Get filtered motor temperature. The temperature is pre-calculated, so this
+ * functions is fast.
+ *
+ * @return
+ * The filtered motor temperature.
+ */
+float mc_interface_temp_motor_filtered(void) {
+	return motor_now()->m_temp_motor;
+}
+
+/**
+ * Get the battery level, based on battery settings in configuration. Notice that
+ * this function is based on remaining watt hours, and not amp hours.
+ *
+ * @param wh_left
+ * Pointer to where to store the remaining watt hours, can be null.
+ *
+ * @return
+ * Battery level, range 0 to 1
+ */
+float mc_interface_get_battery_level(float *wh_left) {
+	const volatile mc_configuration *conf = mc_interface_get_configuration();
+	const float v_in = motor_now()->m_input_voltage_filtered_slower;
+	float battery_avg_voltage = 0.0;
+	float battery_avg_voltage_left = 0.0;
+	float ah_left = 0;
+	float ah_tot = conf->si_battery_ah;
+
+	switch (conf->si_battery_type) {
+	case BATTERY_TYPE_LIION_3_0__4_2:
+		battery_avg_voltage = ((3.2 + 4.2) / 2.0) * (float)(conf->si_battery_cells);
+		battery_avg_voltage_left = ((3.2 * (float)(conf->si_battery_cells) + v_in) / 2.0);
+		float batt_left = utils_map(v_in / (float)(conf->si_battery_cells),
+									3.2, 4.2, 0.0, 1.0);
+		batt_left = utils_batt_liion_norm_v_to_capacity(batt_left);
+		ah_tot *= 0.85; // 0.85 because the battery is not fully depleted at 3.2V / cell
+		ah_left = batt_left * ah_tot;
+		break;
+
+	case BATTERY_TYPE_LIIRON_2_6__3_6:
+		battery_avg_voltage = ((2.8 + 3.6) / 2.0) * (float)(conf->si_battery_cells);
+		battery_avg_voltage_left = ((2.8 * (float)(conf->si_battery_cells) + v_in) / 2.0);
+		ah_left = utils_map(v_in / (float)(conf->si_battery_cells),
+				2.6, 3.6, 0.0, conf->si_battery_ah);
+		break;
+
+	case BATTERY_TYPE_LEAD_ACID:
+		// TODO: This does not really work for lead-acid batteries
+		battery_avg_voltage = ((2.1 + 2.36) / 2.0) * (float)(conf->si_battery_cells);
+		battery_avg_voltage_left = ((2.1 * (float)(conf->si_battery_cells) + v_in) / 2.0);
+		ah_left = utils_map(v_in / (float)(conf->si_battery_cells),
+				2.1, 2.36, 0.0, conf->si_battery_ah);
+		break;
+
+	default:
+		break;
+	}
+
+	const float wh_batt_tot = ah_tot * battery_avg_voltage;
+	const float wh_batt_left = ah_left * battery_avg_voltage_left;
+
+	if (wh_left) {
+		*wh_left = wh_batt_left;
+	}
+
+	return wh_batt_left / wh_batt_tot;
+}
 //
 ///**
 // * Get the speed based on wheel diameter, gearing and motor pole settings.

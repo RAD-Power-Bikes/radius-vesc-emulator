@@ -365,98 +365,101 @@ void commands_process_packet(unsigned char *data, unsigned int len,
         case COMM_GET_VALUES_SELECTIVE:
             VESC_EMULATOR_NO_SUPPORT
         {
-            //		int32_t ind = 0;
-            //		chMtxLock(&send_buffer_mutex);
-            //		uint8_t *send_buffer = send_buffer_global;
-            //		send_buffer[ind++] = packet_id;
-            //
-            //		uint32_t mask = 0xFFFFFFFF;
-            //		if (packet_id == COMM_GET_VALUES_SELECTIVE) {
-            //			int32_t ind2 = 0;
-            //			mask = buffer_get_uint32(data, &ind2);
-            //			buffer_append_uint32(send_buffer, mask, &ind);
-            //		}
-            //
-            //		if (mask & ((uint32_t)1 << 0)) {
-            //			buffer_append_float16(send_buffer, mc_interface_temp_fet_filtered(), 1e1, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 1)) {
-            //			buffer_append_float16(send_buffer, mc_interface_temp_motor_filtered(), 1e1, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 2)) {
-            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_motor_current(), 1e2, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 3)) {
-            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_input_current(), 1e2, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 4)) {
-            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_id(), 1e2, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 5)) {
-            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_iq(), 1e2, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 6)) {
-            //			buffer_append_float16(send_buffer, mc_interface_get_duty_cycle_now(), 1e3, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 7)) {
-            //			buffer_append_float32(send_buffer, mc_interface_get_rpm(), 1e0, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 8)) {
-            //			buffer_append_float16(send_buffer, mc_interface_get_input_voltage_filtered(), 1e1, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 9)) {
-            //			buffer_append_float32(send_buffer, mc_interface_get_amp_hours(false), 1e4, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 10)) {
-            //			buffer_append_float32(send_buffer, mc_interface_get_amp_hours_charged(false), 1e4, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 11)) {
-            //			buffer_append_float32(send_buffer, mc_interface_get_watt_hours(false), 1e4, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 12)) {
-            //			buffer_append_float32(send_buffer, mc_interface_get_watt_hours_charged(false), 1e4, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 13)) {
-            //			buffer_append_int32(send_buffer, mc_interface_get_tachometer_value(false), &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 14)) {
-            //			buffer_append_int32(send_buffer, mc_interface_get_tachometer_abs_value(false), &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 15)) {
-            //			send_buffer[ind++] = mc_interface_get_fault();
-            //		}
-            //		if (mask & ((uint32_t)1 << 16)) {
-            //			buffer_append_float32(send_buffer, mc_interface_get_pid_pos_now(), 1e6, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 17)) {
-            //			uint8_t current_controller_id = app_get_configuration()->controller_id;
-            //#ifdef HW_HAS_DUAL_MOTORS
-            //			if (mc_interface_get_motor_thread() == 2) {
-            //				current_controller_id = utils_second_motor_id();
-            //			}
-            //#endif
-            //			send_buffer[ind++] = current_controller_id;
-            //		}
-            //		if (mask & ((uint32_t)1 << 18)) {
-            //			buffer_append_float16(send_buffer, NTC_TEMP_MOS1(), 1e1, &ind);
-            //			buffer_append_float16(send_buffer, NTC_TEMP_MOS2(), 1e1, &ind);
-            //			buffer_append_float16(send_buffer, NTC_TEMP_MOS3(), 1e1, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 19)) {
-            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vd(), 1e3, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 20)) {
-            //			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vq(), 1e3, &ind);
-            //		}
-            //		if (mask & ((uint32_t)1 << 21)) {
-            //			uint8_t status = 0;
-            //			status |= timeout_has_timeout();
-            //			status |= timeout_kill_sw_active() << 1;
-            //			send_buffer[ind++] = status;
-            //		}
-            //
-            //		reply_func(send_buffer, ind);
-            //		chMtxUnlock(&send_buffer_mutex);
+            		int32_t ind = 0;
+//            		chMtxLock(&send_buffer_mutex);
+            		uint8_t *send_buffer = send_buffer_global;
+            		send_buffer[ind++] = packet_id;
+
+            		uint32_t mask = 0xFFFFFFFF;
+            		if (packet_id == COMM_GET_VALUES_SELECTIVE) {
+            			int32_t ind2 = 0;
+            			mask = buffer_get_uint32(data, &ind2);
+            			buffer_append_uint32(send_buffer, mask, &ind);
+            		}
+
+            		if (mask & ((uint32_t)1 << 0)) {
+            			buffer_append_float16(send_buffer, mc_interface_temp_fet_filtered(), 1e1, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 1)) {
+            			buffer_append_float16(send_buffer, mc_interface_temp_motor_filtered(), 1e1, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 2)) {
+            			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_motor_current(), 1e2, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 3)) {
+            			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_input_current(), 1e2, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 4)) {
+            			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_id(), 1e2, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 5)) {
+            			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_iq(), 1e2, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 6)) {
+            			buffer_append_float16(send_buffer, mc_interface_get_duty_cycle_now(), 1e3, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 7)) {
+            			buffer_append_float32(send_buffer, mc_interface_get_rpm(), 1e0, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 8)) {
+            			buffer_append_float16(send_buffer, mc_interface_get_input_voltage_filtered(), 1e1, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 9)) {
+            			buffer_append_float32(send_buffer, mc_interface_get_amp_hours(false), 1e4, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 10)) {
+            			buffer_append_float32(send_buffer, mc_interface_get_amp_hours_charged(false), 1e4, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 11)) {
+            			buffer_append_float32(send_buffer, mc_interface_get_watt_hours(false), 1e4, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 12)) {
+            			buffer_append_float32(send_buffer, mc_interface_get_watt_hours_charged(false), 1e4, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 13)) {
+            			buffer_append_int32(send_buffer, mc_interface_get_tachometer_value(false), &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 14)) {
+            			buffer_append_int32(send_buffer, mc_interface_get_tachometer_abs_value(false), &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 15)) {
+            			send_buffer[ind++] = mc_interface_get_fault();
+            		}
+            		if (mask & ((uint32_t)1 << 16)) {
+            			buffer_append_float32(send_buffer, mc_interface_get_pid_pos_now(), 1e6, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 17)) {
+            			uint8_t current_controller_id = app_get_configuration()->controller_id;
+            #ifdef HW_HAS_DUAL_MOTORS
+            			if (mc_interface_get_motor_thread() == 2) {
+            				current_controller_id = utils_second_motor_id();
+            			}
+            #endif
+            			send_buffer[ind++] = current_controller_id;
+            		}
+            		if (mask & ((uint32_t)1 << 18)) {
+//            			buffer_append_float16(send_buffer, NTC_TEMP_MOS1(), 1e1, &ind);
+//            			buffer_append_float16(send_buffer, NTC_TEMP_MOS2(), 1e1, &ind);
+//            			buffer_append_float16(send_buffer, NTC_TEMP_MOS3(), 1e1, &ind);
+            		    buffer_append_float16(send_buffer, 0, 1e1, &ind);
+            		    buffer_append_float16(send_buffer, 0, 1e1, &ind);
+            		    buffer_append_float16(send_buffer, 0, 1e1, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 19)) {
+            			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vd(), 1e3, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 20)) {
+            			buffer_append_float32(send_buffer, mc_interface_read_reset_avg_vq(), 1e3, &ind);
+            		}
+            		if (mask & ((uint32_t)1 << 21)) {
+            			uint8_t status = 0;
+//            			status |= timeout_has_timeout();
+//            			status |= timeout_kill_sw_active() << 1;
+            			send_buffer[ind++] = status;
+            		}
+
+            		reply_func(send_buffer, ind);
+//            		chMtxUnlock(&send_buffer_mutex);
         } break;
             
         case COMM_SET_DUTY: { VESC_EMULATOR_NO_SUPPORT
