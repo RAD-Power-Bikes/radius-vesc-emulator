@@ -37,12 +37,28 @@ unsigned char replyPacketBuf[512];  // Read characteristic is sent by VESC emula
 
 static unsigned int write_index = 0;
 static PACKET_STATE_t state;
+static uint8_t* ble_reply_buffer;
+static uint16_t* ble_reply_length;
 
 void dump_buffer(unsigned char* buf, unsigned int len);
+
+void process_vesc_app_data( uint8_t* app_packet_data, uint16_t app_packet_len, uint8_t* reply_packet_buffer, uint16_t* reply_packet_length)
+{
+//    // expose return buffer parameters (hack) TODO: fixme
+//    ble_reply_buffer = reply_packet_buffer;
+
+    write_index = 0;
+    ble_reply_length = reply_packet_length;
+    ble_reply_buffer = reply_packet_buffer;
+    process_packet(app_packet_data, app_packet_len);
+}
+
 
 void send_packet_ble(unsigned char *data, unsigned int len) {
     dump_buffer(data, len);
     memcpy(buffer + write_index, data, len);
+    memcpy(ble_reply_buffer + write_index, data, len);
+    *ble_reply_length = len;
     write_index += len;
 }
 
@@ -60,7 +76,7 @@ void dump_buffer(unsigned char* buf, unsigned int len) {
         printf("%02X", buf[i]);
         printf(",");
     }
-    printf("\r");
+    printf("\r\n");
 }
 
 
@@ -147,7 +163,7 @@ void vesc_emul(void){
     mempools_free_appconf(appconf);
     
     packet_init(send_packet_ble, process_packet, &state);
-    process_packet(bleTestPacket, sizeof(bleTestPacket));
+//    process_packet(bleTestPacket, sizeof(bleTestPacket));
     
     
 }

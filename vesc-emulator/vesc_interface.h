@@ -36,5 +36,8 @@
 #define chMtxUnlock pthread_mutex_unlock
 #define chMtxObjectInit(a)  pthread_mutex_init(a,NULL)
 void vesc_emul(void);
+void process_packet(unsigned char *data, unsigned int len);
+void process_vesc_app_data( uint8_t* app_packet_data, uint16_t app_packet_len, uint8_t* reply_packet_buffer, uint16_t* reply_packet_length);
+
 
 #endif /* vesc_interface_h */
