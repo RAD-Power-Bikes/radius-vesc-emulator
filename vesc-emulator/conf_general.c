@@ -56,6 +56,7 @@ const uint8_t stm32_fake_uuid[12] = { STM32_UUID_8 };
 //uint16_t VirtAddVarTab[NB_OF_VAR];
 //bool conf_general_permanent_nrf_found = false;
 //__attribute__((section(".ram4"))) volatile backup_data g_backup;
+volatile backup_data g_backup;
 //
 //// Private functions
 //static bool read_eeprom_var(eeprom_var *v, int address, uint16_t base);

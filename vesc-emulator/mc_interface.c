@@ -39,7 +39,6 @@
 #include "crc.h"
 //#include "bms.h"
 //#include "events.h"
-
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1158,10 +1157,10 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 	return val;
 }
 
-//float mc_interface_get_tot_current(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+float mc_interface_get_tot_current(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tot_current();
@@ -1170,18 +1169,18 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tot_current();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return ret;
-//}
-//
-//float mc_interface_get_tot_current_filtered(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+float mc_interface_get_tot_current_filtered(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tot_current_filtered();
@@ -1190,18 +1189,18 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tot_current_filtered();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return ret;
-//}
-//
-//float mc_interface_get_tot_current_directional(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+float mc_interface_get_tot_current_directional(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tot_current_directional();
@@ -1210,18 +1209,18 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tot_current_directional();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return DIR_MULT * ret;
-//}
-//
-//float mc_interface_get_tot_current_directional_filtered(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+	default:
+		break;
+	}
+
+	return DIR_MULT * ret;
+}
+
+float mc_interface_get_tot_current_directional_filtered(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tot_current_directional_filtered();
@@ -1230,18 +1229,18 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tot_current_directional_filtered();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return DIR_MULT * ret;
-//}
-//
-//float mc_interface_get_tot_current_in(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+	default:
+		break;
+	}
+
+	return DIR_MULT * ret;
+}
+
+float mc_interface_get_tot_current_in(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tot_current_in();
@@ -1250,18 +1249,18 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tot_current_in();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return ret;
-//}
-//
-//float mc_interface_get_tot_current_in_filtered(void) {
-//	float ret = 0.0;
-//
-//	switch (motor_now()->m_conf.motor_type) {
+
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+float mc_interface_get_tot_current_in_filtered(void) {
+	float ret = 0.0;
+
+	switch (motor_now()->m_conf.motor_type) {
 //	case MOTOR_TYPE_BLDC:
 //	case MOTOR_TYPE_DC:
 //		ret = mcpwm_get_tot_current_in_filtered();
@@ -1270,13 +1269,13 @@ float mc_interface_get_watt_hours_charged(bool reset) {
 //	case MOTOR_TYPE_FOC:
 //		ret = mcpwm_foc_get_tot_current_in_filtered();
 //		break;
-//
-//	default:
-//		break;
-//	}
-//
-//	return ret;
-//}
+
+	default:
+		break;
+	}
+
+	return ret;
+}
 
 float mc_interface_get_input_voltage_filtered(void) {
 	return motor_now()->m_input_voltage_filtered;
@@ -1618,58 +1617,59 @@ float mc_interface_get_battery_level(float *wh_left) {
 
 	return wh_batt_left / wh_batt_tot;
 }
-//
-///**
-// * Get the speed based on wheel diameter, gearing and motor pole settings.
-// *
-// * @return
-// * Speed, in m/s
-// */
-//float mc_interface_get_speed(void) {
-//#ifdef HW_HAS_WHEEL_SPEED_SENSOR
-//	return hw_get_speed();
-//#else
+
+/**
+ * Get the speed based on wheel diameter, gearing and motor pole settings.
+ *
+ * @return
+ * Speed, in m/s
+ */
+float mc_interface_get_speed(void) {
+#ifdef HW_HAS_WHEEL_SPEED_SENSOR
+	return hw_get_speed();
+#else
 //	const volatile mc_configuration *conf = mc_interface_get_configuration();
 //	const float rpm = mc_interface_get_rpm() / (conf->si_motor_poles / 2.0);
 //	return (rpm / 60.0) * conf->si_wheel_diameter * M_PI / conf->si_gear_ratio;
-//#endif
-//}
-//
-///**
-// * Get the distance traveled based on wheel diameter, gearing and motor pole settings.
-// *
-// * @return
-// * Distance traveled since boot, in meters
-// */
-//float mc_interface_get_distance(void) {
-//	const volatile mc_configuration *conf = mc_interface_get_configuration();
-//	const float tacho_scale = (conf->si_wheel_diameter * M_PI) / (3.0 * conf->si_motor_poles * conf->si_gear_ratio);
-//	return mc_interface_get_tachometer_value(false) * tacho_scale;
-//}
-//
-///**
-// * Get the absolute distance traveled based on wheel diameter, gearing and motor pole settings.
-// *
-// * @return
-// * Absolute distance traveled since boot, in meters
-// */
-//float mc_interface_get_distance_abs(void) {
-//	const volatile mc_configuration *conf = mc_interface_get_configuration();
-//	const float tacho_scale = (conf->si_wheel_diameter * M_PI) / (3.0 * conf->si_motor_poles * conf->si_gear_ratio);
-//	return mc_interface_get_tachometer_abs_value(false) * tacho_scale;
-//}
-//
-//setup_values mc_interface_get_setup_values(void) {
-//	setup_values val = {0, 0, 0, 0, 0, 0, 0};
-//	val.num_vescs = 1;
-//
-//	val.ah_tot += mc_interface_get_amp_hours(false);
-//	val.ah_charge_tot += mc_interface_get_amp_hours_charged(false);
-//	val.wh_tot += mc_interface_get_watt_hours(false);
-//	val.wh_charge_tot += mc_interface_get_watt_hours_charged(false);
-//	val.current_tot += mc_interface_get_tot_current_filtered();
-//	val.current_in_tot += mc_interface_get_tot_current_in_filtered();
-//
+	return (24.9);
+#endif
+}
+
+/**
+ * Get the distance traveled based on wheel diameter, gearing and motor pole settings.
+ *
+ * @return
+ * Distance traveled since boot, in meters
+ */
+float mc_interface_get_distance(void) {
+	const volatile mc_configuration *conf = mc_interface_get_configuration();
+	const float tacho_scale = (conf->si_wheel_diameter * M_PI) / (3.0 * conf->si_motor_poles * conf->si_gear_ratio);
+	return mc_interface_get_tachometer_value(false) * tacho_scale;
+}
+
+/**
+ * Get the absolute distance traveled based on wheel diameter, gearing and motor pole settings.
+ *
+ * @return
+ * Absolute distance traveled since boot, in meters
+ */
+float mc_interface_get_distance_abs(void) {
+	const volatile mc_configuration *conf = mc_interface_get_configuration();
+	const float tacho_scale = (conf->si_wheel_diameter * M_PI) / (3.0 * conf->si_motor_poles * conf->si_gear_ratio);
+	return mc_interface_get_tachometer_abs_value(false) * tacho_scale;
+}
+
+setup_values mc_interface_get_setup_values(void) {
+	setup_values val = {0, 0, 0, 0, 0, 0, 0};
+	val.num_vescs = 1;
+
+	val.ah_tot += mc_interface_get_amp_hours(false);
+	val.ah_charge_tot += mc_interface_get_amp_hours_charged(false);
+	val.wh_tot += mc_interface_get_watt_hours(false);
+	val.wh_charge_tot += mc_interface_get_watt_hours_charged(false);
+	val.current_tot += mc_interface_get_tot_current_filtered();
+	val.current_in_tot += mc_interface_get_tot_current_in_filtered();
+
 //	for (int i = 0;i < CAN_STATUS_MSGS_TO_STORE;i++) {
 //		can_status_msg *msg = comm_can_get_status_msg_index(i);
 //		if (msg->id >= 0 && UTILS_AGE_S(msg->rx_time) < 0.1) {
@@ -1694,30 +1694,31 @@ float mc_interface_get_battery_level(float *wh_left) {
 //			val.current_in_tot += msg4->current_in;
 //		}
 //	}
-//
-//	return val;
-//}
-//
-///**
-// * Set odometer value in meters.
-// *
-// * @param new_odometer_meters
-// * new odometer value in meters
-// */
-//void mc_interface_set_odometer(uint64_t new_odometer_meters) {
-//	g_backup.odometer = new_odometer_meters;
-//}
-//
-///**
-// * Return current odometer value in meters.
-// *
-// * @return
-// * Odometer value in meters, including current trip
-// */
-//uint64_t mc_interface_get_odometer(void) {
-//	return g_backup.odometer;
-//}
-//
+
+	return val;
+}
+
+/**
+ * Set odometer value in meters.
+ *
+ * @param new_odometer_meters
+ * new odometer value in meters
+ */
+void mc_interface_set_odometer(uint64_t new_odometer_meters) {
+	g_backup.odometer = new_odometer_meters;
+}
+
+/**
+ * Return current odometer value in meters.
+ *
+ * @return
+ * Odometer value in meters, including current trip
+ */
+uint64_t mc_interface_get_odometer(void) {
+    return g_backup.odometer;
+//    return 0;
+}
+
 ///**
 // * Ignore motor control commands for this amount of time.
 // */

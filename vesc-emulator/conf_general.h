@@ -28,6 +28,7 @@
 
 
 #include "datatypes.h"
+//#include "conf_general.h"
 
 // Settings and parameters to override
 //#define VIN_R1						33000.0
@@ -350,7 +351,7 @@ extern const uint8_t stm32_fake_uuid[12];
 
 //// Global configuration variables
 //extern bool conf_general_permanent_nrf_found;
-//extern volatile backup_data g_backup;
+extern volatile backup_data g_backup;
 //
 //// Functions
 //void conf_general_init(void);
